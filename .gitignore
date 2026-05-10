@@ -1,0 +1,227 @@
+# ===========================================
+# Dependencies
+# ===========================================
+node_modules/
+*.npm
+*.yarn
+.pnp
+.pnp.js
+
+# ===========================================
+# Build & Distribution
+# ===========================================
+dist/
+dist-ssr/
+build/
+*.local
+
+# ===========================================
+# Environment Variables
+# ===========================================
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# ===========================================
+# IDE & Editor
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+.netrc
+.jshintrc
+.eslintignore
+
+# ===========================================
+# Editor Backups
+# ===========================================
+*.bak
+*.backup
+*~
+*.swp
+*.swo
+
+# ===========================================
+# OS-specific Files
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# ===========================================
+# Logs
+# ===========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# ===========================================
+# Testing
+# ===========================================
+coverage/
+.nyc_output/
+jest.config.js
+*.coverage
+.coverage
+
+# ===========================================
+# Temporary & Cache Files
+# ===========================================
+tmp/
+temp/
+*.tmp
+.cache/
+.eslintcache
+.stylelintcache
+
+# ===========================================
+# Package Manager Lock Files (Optional)
+# ===========================================
+# Uncomment below to ignore lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# Keep lock files for production builds
+
+# ===========================================
+# Vite
+# ===========================================
+.vite/
+.vite-cache/
+
+# ===========================================
+# IDE Specific Files
+# ===========================================
+# VSCode
+.vscode/settings.json
+.vscode/extensions.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# JetBrains IDEs
+.idea/
+.idea/codeStyles/
+.idea/inspectionProfiles/
+*.iws
+*.iml
+*.ipr
+*.ipy_checkpoints
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+.vim/
+.vimrc
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+.netrwhist
+
+# ===========================================
+# Process Files
+# ===========================================
+.env.process
+
+# ===========================================
+# Debugging
+# ===========================================
+debug.log
+npm-debug.log
+.debug/
+
+# ===========================================
+# Generated Files
+# ===========================================
+.next/
+.nuxt/
+out/
+.parcel-cache
+.cache/
+
+# ===========================================
+# Runtime Data
+# ===========================================
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ===========================================
+# Miscellaneous
+# ===========================================
+.fusebox/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.prettierignore
+
+# ===========================================
+# Local Development
+# ===========================================
+.env.development.local
+.env.test.local
+
+# ===========================================
+# File Upload Directories (if using local storage)
+# ===========================================
+uploads/
+public/uploads/
+
+# ===========================================
+# Database Files (if using local DB)
+# ===========================================
+*.sqlite
+*.db
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# ===========================================
+# Generated Documentation
+# ===========================================
+docs/.build/
+docs/.generated/
+
+# ===========================================
+# System Backups
+# ===========================================
+*.backup
+*.bkp
+*.bak
+
+# ===========================================
+# Archive Files
+# ===========================================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# ===========================================
+# Unused but Explicitly Ignored
+# ===========================================
+.grunt/
+.husky/
+._*
+.AppleDouble
+.LSOverride
