@@ -581,8 +581,7 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 **Prathamesh More**
 
-- GitHub: [@prathamesh](https://github.com/yourusername)
-- Portfolio: [yourportfolio.com](https://yourportfolio.com)
+- GitHub: [@prathamesh](https://github.com/prathameshmore07)
 
 ---
 
@@ -592,15 +591,6 @@ MIT License - feel free to use this project for personal or commercial purposes.
 - UI/UX best practices from Zomato, Swiggy, DoorDash
 - Community feedback and contributions
 - Open source libraries that power this app
-
----
-
-## 💬 Support
-
-Got questions or feedback? Open an issue or reach out:
-- **Issues:** Report bugs via GitHub Issues
-- **Discussions:** Share ideas and suggestions
-- **Email:** your.email@example.com
 
 ---
 
