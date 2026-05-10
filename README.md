@@ -545,7 +545,7 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 **Prathamesh More**
 
-- GitHub: [@prathamesh](https://github.com/prathameshmore07)
+- GitHub: [@prathameshmore07](https://github.com/prathameshmore07)
 
 ---
 
