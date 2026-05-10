@@ -492,49 +492,13 @@ npm run build
 
 ---
 
-## 📸 Screenshots
-
-### Homepage
-Browse restaurants, apply filters, explore cuisines
-```
-[Homepage Screenshot]
-```
-
-### Restaurant Page
-View menu, customize items, manage cart
-```
-[Restaurant Page Screenshot]
-```
-
-### Cart & Checkout
-Review items, apply coupons, select delivery address
-```
-[Cart Screenshot]
-[Checkout Screenshot]
-```
-
-### Order Tracking
-Real-time progress, ETA countdown, rider information
-```
-[Tracking Screenshot]
-```
-
-### Reviews & Profile
-Community feedback, order history, saved addresses
-```
-[Reviews Screenshot]
-[Profile Screenshot]
-```
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
 
 1. **Fork the repository**
    ```bash
-   git clone https://github.com/yourusername/crave.git
+   git clone https://github.com/prathameshmore07/crave.git
    ```
 
 2. **Create a feature branch**
