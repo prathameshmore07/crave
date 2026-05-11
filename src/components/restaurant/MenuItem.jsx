@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCartStore } from '../../store/cartStore';
 import { formatPrice } from '../../utils/formatPrice';
-import { Plus, Minus, Star, Heart } from 'lucide-react';
+import { Plus, Minus, Star, Heart, Sparkles, Award, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import DishImage from '../common/DishImage';
@@ -80,33 +80,37 @@ export default function MenuItem({ item, restaurant, onOpenCustomize }) {
             <div className="nonveg-dot flex-shrink-0 shadow-3xs" title="Non-veg"></div>
           )}
 
+          {/* professional icon replacement */}
+          {/* remove unnecessary emoji clutter */}
           {item.isBestseller && (
-            <span className="bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-0.5 shadow-3xs">
-              ★ Bestseller
+            <span className="bg-amber-50/80 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1 border border-amber-200/20 shadow-3xs">
+              <Star size={10} className="fill-amber-500 text-amber-500" /> Bestseller
             </span>
           )}
 
           {item.isMostOrdered && (
-            <span className="bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-400 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-0.5 shadow-3xs">
-              🔥 Student Fav
+            <span className="bg-orange-50/80 text-orange-800 dark:bg-orange-950/20 dark:text-orange-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1 border border-orange-200/20 shadow-3xs">
+              <Sparkles size={10} className="text-orange-500" /> Student Choice
             </span>
           )}
 
           {item.isChefSpecial && (
-            <span className="bg-brand/10 text-brand text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0">
-              👨‍🍳 Chef Special
+            <span className="bg-brand/5 text-brand dark:bg-brand/10 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1 border border-brand/10">
+              <Award size={10} /> Chef Special
             </span>
           )}
 
           {item.rating && (
-            <span className="text-[10px] font-extrabold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-0.5">
-              ★ {item.rating.toFixed(1)}
+            <span className="text-[9px] font-extrabold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <Star size={10} className="fill-amber-500 text-amber-500" /> {item.rating.toFixed(1)}
             </span>
           )}
 
           {item.spiceLevel && (
-            <span className="text-xs flex-shrink-0 tracking-tighter" title={`Spice Level: ${item.spiceLevel}`}>
-              {"🌶️".repeat(item.spiceLevel)}
+            <span className="flex items-center gap-0.5 flex-shrink-0" title={`Spice Level: ${item.spiceLevel}`}>
+              {Array.from({ length: item.spiceLevel }).map((_, i) => (
+                <Flame key={i} size={11} className="fill-brand text-brand animate-pulse" />
+              ))}
             </span>
           )}
         </div>

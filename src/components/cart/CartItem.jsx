@@ -4,6 +4,7 @@ import { formatPrice } from '../../utils/formatPrice';
 import { Plus, Minus, Trash2, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { getUserJsonItem, setUserItem } from '../../utils/storage';
 import DishImage from '../common/DishImage';
 
 export default function CartItem({ item }) {
@@ -16,10 +17,10 @@ export default function CartItem({ item }) {
   const handleSaveForLater = (i) => {
     // Save to favorites in localStorage as demonstration
     try {
-      const favorites = JSON.parse(localStorage.getItem('saved_for_later') || '[]');
+      const favorites = getUserJsonItem('saved_for_later', []);
       if (!favorites.some(fav => fav.id === i.id)) {
         favorites.push(i);
-        localStorage.setItem('saved_for_later', JSON.stringify(favorites));
+        setUserItem('saved_for_later', favorites);
       }
       // Remove from cart
       removeItem(i.id, i.selectedCustomizations);

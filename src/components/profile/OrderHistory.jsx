@@ -4,6 +4,7 @@ import { useOrderStore } from '../../store/orderStore';
 import { useCartStore } from '../../store/cartStore';
 import { useUiStore } from '../../store/uiStore';
 import { useReviewStore } from '../../store/reviewStore';
+import { useAuthStore } from '../../store/authStore';
 import { formatPrice } from '../../utils/formatPrice';
 import { ShoppingBag, ChevronRight, CheckCircle, Compass, Star, CreditCard, MessageSquare, X, ShieldAlert, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +20,8 @@ export default function OrderHistory() {
   const setCartOpen = useUiStore((state) => state.setCartOpen);
   const submitReview = useReviewStore((state) => state.submitReview);
   const deleteReview = useReviewStore((state) => state.deleteReview);
+
+  const user = useAuthStore((state) => state.user);
 
   // Modal active states
   const [activeReviewOrder, setActiveReviewOrder] = useState(null);
@@ -53,17 +56,10 @@ export default function OrderHistory() {
 
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
 
-  // Fallback to localStorage user orders if store is empty
+  // Fallback to active user's profile orderHistory if store is empty
   let orders = orderHistory || [];
-  if (orders.length === 0) {
-    try {
-      const storedUser = localStorage.getItem('auth_user');
-      if (storedUser) {
-        orders = JSON.parse(storedUser).orderHistory || [];
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  if (orders.length === 0 && user) {
+    orders = user.orderHistory || [];
   }
 
   // Reload previous ordered items back into cart
@@ -214,11 +210,13 @@ export default function OrderHistory() {
     // allow review only for delivered orders
     rateOrder(activeReviewOrder.orderId, ratingData);
 
+    const authorName = user ? user.name : "You (Student Verified)";
+
     // submit review instantly to the restaurant reviews pool
     submitReview(activeReviewOrder.restaurantId, {
       id: `review-${activeReviewOrder.orderId}`,
-      userName: localStorage.getItem('auth_user_name') || "You (Student Verified)",
-      avatar: "You",
+      userName: authorName,
+      avatar: authorName.substring(0, 2).toUpperCase(),
       rating: ratingStars,
       foodQuality: foodStars,
       deliveryExperience: deliveryStars,
@@ -571,7 +569,7 @@ export default function OrderHistory() {
                       </div>
 
                       {/* Row 2: Food Quality Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-850/10">
+                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">🍔 Food Quality</span>
                           <span className="text-[11px] text-zinc-450 font-bold">{foodStars}★</span>
@@ -601,7 +599,7 @@ export default function OrderHistory() {
                       </div>
 
                       {/* Row 3: Delivery Experience Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-850/10">
+                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">🛵 Delivery Experience</span>
                           <span className="text-[11px] text-zinc-450 font-bold">{deliveryStars}★</span>
@@ -631,7 +629,7 @@ export default function OrderHistory() {
                       </div>
 
                       {/* Row 4: Packaging Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-850/10">
+                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">📦 Packaging Quality</span>
                           <span className="text-[11px] text-zinc-450 font-bold">{packagingStars}★</span>
@@ -716,7 +714,7 @@ export default function OrderHistory() {
                               className={`h-9 w-9 rounded-full flex items-center justify-center text-lg border transition-all hover:scale-115 cursor-pointer bg-transparent ${
                                 selectedEmoji === emo 
                                   ? 'border-amber-400 bg-amber-500/10 scale-110' 
-                                  : 'border-zinc-200 dark:border-zinc-850 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                                  : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
                               }`}
                             >
                               {emo}

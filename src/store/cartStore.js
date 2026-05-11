@@ -1,21 +1,36 @@
 import { create } from 'zustand';
+import { getUserItem, getUserJsonItem, setUserItem, removeUserItem } from '../utils/storage';
 
 export const useCartStore = create((set, get) => {
-  const storedCart = localStorage.getItem('cart_items');
-  const storedRestaurant = localStorage.getItem('cart_restaurant');
-  const storedTip = localStorage.getItem('cart_tip');
-  const storedCoupon = localStorage.getItem('cart_coupon');
+  // Retrieve initial user-scoped states from localStorage
+  const items = getUserJsonItem('cart_items', []);
+  const restaurant = getUserJsonItem('cart_restaurant', null);
+  const tip = Number(getUserItem('cart_tip', '0'));
+  const appliedCoupon = getUserJsonItem('cart_coupon', null);
 
   return {
-    items: storedCart ? JSON.parse(storedCart) : [],
-    restaurant: storedRestaurant ? JSON.parse(storedRestaurant) : null, // Active restaurant { id, name, deliveryFee }
-    tip: storedTip ? Number(storedTip) : 0,
-    appliedCoupon: storedCoupon ? JSON.parse(storedCoupon) : null, // { code, discountAmount, type }
+    items,
+    restaurant,
+    tip,
+    appliedCoupon,
     
     // Interceptor Modal State
     pendingItem: null,
     pendingRestaurant: null,
     showReplaceModal: false,
+
+    // Rehydrate/refresh state when user logs in or out
+    loadForUser: () => {
+      set({
+        items: getUserJsonItem('cart_items', []),
+        restaurant: getUserJsonItem('cart_restaurant', null),
+        tip: Number(getUserItem('cart_tip', '0')),
+        appliedCoupon: getUserJsonItem('cart_coupon', null),
+        pendingItem: null,
+        pendingRestaurant: null,
+        showReplaceModal: false
+      });
+    },
 
     addItem: (item, restaurantInfo) => {
       const currentRestaurant = get().restaurant;
@@ -61,9 +76,9 @@ export const useCartStore = create((set, get) => {
           });
         }
 
-        // Save to localStorage
-        localStorage.setItem('cart_items', JSON.stringify(newItems));
-        localStorage.setItem('cart_restaurant', JSON.stringify(activeRest));
+        // Save to user-scoped localStorage
+        setUserItem('cart_items', newItems);
+        setUserItem('cart_restaurant', activeRest);
 
         return {
           items: newItems,
@@ -75,9 +90,9 @@ export const useCartStore = create((set, get) => {
     confirmReplaceCart: () => {
       const { pendingItem, pendingRestaurant } = get();
       if (pendingItem && pendingRestaurant) {
-        // Clear existing cart data
-        localStorage.removeItem('cart_coupon');
-        localStorage.removeItem('cart_tip');
+        // Clear existing cart coupon/tip data
+        removeUserItem('cart_coupon');
+        removeUserItem('cart_tip');
         
         const newItems = [{ 
           ...pendingItem, 
@@ -85,8 +100,9 @@ export const useCartStore = create((set, get) => {
           selectedCustomizations: pendingItem.selectedCustomizations || [] 
         }];
         
-        localStorage.setItem('cart_items', JSON.stringify(newItems));
-        localStorage.setItem('cart_restaurant', JSON.stringify(pendingRestaurant));
+        // Save to user-scoped localStorage
+        setUserItem('cart_items', newItems);
+        setUserItem('cart_restaurant', pendingRestaurant);
         
         set({
           items: newItems,
@@ -134,10 +150,10 @@ export const useCartStore = create((set, get) => {
         }
 
         if (newItems.length === 0) {
-          localStorage.removeItem('cart_restaurant');
-          localStorage.removeItem('cart_coupon');
-          localStorage.removeItem('cart_tip');
-          localStorage.removeItem('cart_items');
+          removeUserItem('cart_restaurant');
+          removeUserItem('cart_coupon');
+          removeUserItem('cart_tip');
+          removeUserItem('cart_items');
           return {
             items: [],
             restaurant: null,
@@ -146,7 +162,7 @@ export const useCartStore = create((set, get) => {
           };
         }
 
-        localStorage.setItem('cart_items', JSON.stringify(newItems));
+        setUserItem('cart_items', newItems);
         return { items: newItems };
       });
     },
@@ -177,10 +193,10 @@ export const useCartStore = create((set, get) => {
         }
 
         if (newItems.length === 0) {
-          localStorage.removeItem('cart_restaurant');
-          localStorage.removeItem('cart_coupon');
-          localStorage.removeItem('cart_tip');
-          localStorage.removeItem('cart_items');
+          removeUserItem('cart_restaurant');
+          removeUserItem('cart_coupon');
+          removeUserItem('cart_tip');
+          removeUserItem('cart_items');
           return {
             items: [],
             restaurant: null,
@@ -189,16 +205,16 @@ export const useCartStore = create((set, get) => {
           };
         }
 
-        localStorage.setItem('cart_items', JSON.stringify(newItems));
+        setUserItem('cart_items', newItems);
         return { items: newItems };
       });
     },
 
     clearCart: () => {
-      localStorage.removeItem('cart_items');
-      localStorage.removeItem('cart_restaurant');
-      localStorage.removeItem('cart_coupon');
-      localStorage.removeItem('cart_tip');
+      removeUserItem('cart_items');
+      removeUserItem('cart_restaurant');
+      removeUserItem('cart_coupon');
+      removeUserItem('cart_tip');
       set({
         items: [],
         restaurant: null,
@@ -209,16 +225,16 @@ export const useCartStore = create((set, get) => {
 
     applyCoupon: (coupon) => {
       if (!coupon) {
-        localStorage.removeItem('cart_coupon');
+        removeUserItem('cart_coupon');
         set({ appliedCoupon: null });
         return;
       }
-      localStorage.setItem('cart_coupon', JSON.stringify(coupon));
+      setUserItem('cart_coupon', coupon);
       set({ appliedCoupon: coupon });
     },
 
     setTip: (tipAmount) => {
-      localStorage.setItem('cart_tip', tipAmount.toString());
+      setUserItem('cart_tip', tipAmount.toString());
       set({ tip: tipAmount });
     },
 

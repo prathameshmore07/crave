@@ -6,7 +6,7 @@ import CustomizeModal from '../components/restaurant/CustomizeModal';
 import ReviewCard from '../components/restaurant/ReviewCard';
 import { MenuItemSkeleton } from '../components/common/Skeleton';
 import ErrorState from '../components/common/ErrorState';
-import { Star, Clock, Heart, ArrowLeft, Percent, ThumbsUp, MapPin, Search } from 'lucide-react';
+import { Star, Clock, Heart, ArrowLeft, Percent, ThumbsUp, MapPin, Search, Sparkles, Zap } from 'lucide-react';
 import { formatPrice } from '../utils/formatPrice';
 import { getRatingColor } from '../utils/getRatingColor';
 import { formatTime } from '../utils/formatTime';
@@ -225,11 +225,13 @@ export default function RestaurantDetail() {
             )}
             {(restaurant.isSpecial || restaurant.name === "ITM Canteen") && (
               <>
-                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black uppercase tracking-widest px-2.5 py-0.5 rounded shadow-sm animate-pulse">
-                  🔥 COLLEGE FAVORITE
+                {/* professional icon replacement */}
+                {/* remove unnecessary emoji clutter */}
+                <span className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                  <Sparkles size={11} className="animate-pulse" /> COLLEGE FAVORITE
                 </span>
-                <span className="text-[10px] bg-indigo-600 text-white font-black uppercase tracking-widest px-2.5 py-0.5 rounded shadow-sm">
-                  ⚡ LATE NIGHT AVAILABLE
+                <span className="text-[10px] bg-indigo-600 text-white font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                  <Zap size={11} /> LATE NIGHT AVAILABLE
                 </span>
               </>
             )}

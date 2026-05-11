@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { restaurants } from '../../data/restaurants';
 import RestaurantCard from '../restaurant/RestaurantCard';
 import { Heart } from 'lucide-react';
+import { getUserJsonItem } from '../../utils/storage';
+import { useAuthStore } from '../../store/authStore';
 
 export default function FavRestaurants() {
   const [favs, setFavs] = useState([]);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('fav_restaurants') || '[]');
+    const favorites = getUserJsonItem('fav_restaurants', []);
     const matched = restaurants.filter(r => favorites.includes(r.id));
     setFavs(matched);
-  }, []);
+  }, [user]);
 
   if (favs.length === 0) {
     return (

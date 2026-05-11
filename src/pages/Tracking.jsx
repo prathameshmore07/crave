@@ -7,6 +7,8 @@ import { useOrderStore } from '../store/orderStore';
 import { useCartStore } from '../store/cartStore';
 import { useUiStore } from '../store/uiStore';
 import { useReviewStore } from '../store/reviewStore';
+import { useAuthStore } from '../store/authStore';
+import { getUserJsonItem } from '../utils/storage';
 import { riders } from '../data/riders';
 
 // use shared brand assets across payment flow
@@ -64,6 +66,7 @@ export default function Tracking() {
   const [packagingRating, setPackagingRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [uploadedImage, setUploadedImage] = useState(null);
+  const [dishRatings, setDishRatings] = useState({});
 
   // Refs to prevent duplicate toast notifications
   const notifiedStages = useRef({});
@@ -88,12 +91,9 @@ export default function Tracking() {
       orderToShow = historicalOrder;
     } else {
       try {
-        const localLatest = localStorage.getItem('latest_order');
-        if (localLatest) {
-          const parsed = JSON.parse(localLatest);
-          if (parsed.orderId === id) {
-            orderToShow = parsed;
-          }
+        const parsed = getUserJsonItem('latest_order');
+        if (parsed && parsed.orderId === id) {
+          orderToShow = parsed;
         }
       } catch (e) {
         console.error("Failed to parse latest_order from localStorage:", e);
@@ -230,16 +230,20 @@ export default function Tracking() {
       packaging: packagingRating,
       comment: reviewComment,
       emoji: emojiReaction,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      dishRatings: dishRatings
     };
 
     // // save review for delivered order
     rateOrder(orderToShow.orderId, ratingObj);
 
+    const activeUser = useAuthStore.getState().user;
+    const authorName = activeUser ? activeUser.name : "You (Student Verified)";
+
     useReviewStore.getState().submitReview(orderToShow.restaurantId, {
       id: `review-${orderToShow.orderId}`,
-      userName: localStorage.getItem('auth_user_name') || "You (Student Verified)",
-      avatar: "You",
+      userName: authorName,
+      avatar: authorName.substring(0, 2).toUpperCase(),
       rating: foodRating,
       foodQuality: foodRating,
       deliveryExperience: deliveryRating,
@@ -247,7 +251,9 @@ export default function Tracking() {
       text: reviewComment,
       emoji: emojiReaction,
       orderId: orderToShow.orderId,
-      date: "Just now"
+      date: "Just now",
+      items: orderToShow.items || [],
+      dishRatings: dishRatings
     });
 
     setIsRatingModalOpen(false);
@@ -268,6 +274,7 @@ export default function Tracking() {
       setDeliveryRating(orderToShow.rating.deliveryExperience || orderToShow.rating.food || 5);
       setPackagingRating(orderToShow.rating.packaging || orderToShow.rating.food || 5);
       setReviewComment(orderToShow.rating.comment || "");
+      setDishRatings(orderToShow.rating.dishRatings || {});
     }
     setIsEditingReview(true);
   };
@@ -778,6 +785,40 @@ export default function Tracking() {
                     ))}
                   </div>
                 </div>
+
+                {/* 3.5. Individual Dish Ratings */}
+                {orderToShow.items && orderToShow.items.length > 0 && (
+                  <div className="space-y-2.5 py-3 px-4 bg-zinc-550/5 dark:bg-zinc-900/40 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] border-t">
+                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-extrabold uppercase tracking-widest block">Rate Individual Dishes:</span>
+                    <div className="space-y-2">
+                      {orderToShow.items.map((item) => {
+                        const dRating = dishRatings[item.id] || 5;
+                        return (
+                          <div key={item.id} className="flex items-center justify-between gap-3 bg-white dark:bg-dark-surface p-2 rounded-xl border border-black/[0.02] dark:border-white/[0.02]">
+                            <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{item.name}</span>
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  type="button"
+                                  key={star}
+                                  onClick={() => {
+                                    setDishRatings(prev => ({ ...prev, [item.id]: star }));
+                                  }}
+                                  className="focus:outline-none hover:scale-110 transition-transform bg-transparent border-none p-0 cursor-pointer"
+                                >
+                                  <Star
+                                    size={13}
+                                    className={star <= dRating ? "fill-amber-400 text-amber-400" : "text-gray-200 dark:text-neutral-800"}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* 4. Text Review comment */}
                 <div className="space-y-1 pt-2 border-t border-black/[0.03]">

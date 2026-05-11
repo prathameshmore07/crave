@@ -5,10 +5,35 @@ import { useUiStore } from '../../store/uiStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
-import { ChevronDown, Search, Sun, Moon, ShoppingBag, Bell } from 'lucide-react';
+import { ChevronDown, Search, Sun, Moon, ShoppingBag, Bell, Compass } from 'lucide-react';
 import { cities } from '../../data/cities';
 import { motion } from 'framer-motion';
 import logo from '../../assets/logo.png';
+
+const DonutIcon = ({ className, size = 20 }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path 
+      d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 11.5 21.95 11 21.85 10.5C21.1 10.9 20.1 11 19.5 10.5C18.5 9.7 18.8 8.2 19.8 7.5C19.3 6 18.3 4.7 17 3.8C16 4.8 14.5 5 13.5 4C13 3.5 13.1 2.5 13.5 1.85C13 1.75 12.5 1.7 12 1.7V2ZM12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8Z" 
+      fill="#F43F5E"
+    />
+    <path 
+      d="M12 3.5C7.306 3.5 3.5 7.306 3.5 12C3.5 16.694 7.306 20.5 12 20.5C16.694 20.5 20.5 16.694 20.5 12C20.5 11.7 20.47 11.4 20.4 11.1C19.7 11.3 18.9 11 18.5 10.5C17.2 9.4 17.6 7.4 19 6.5C18.4 5.2 17.4 4.1 16.2 3.3C15.2 4.3 13.5 4.5 12.5 3.5C12.3 3.3 12.1 3.1 12 3V3.5ZM12 9C13.657 9 15 10.343 15 12C15 13.657 13.657 15 12 15C10.343 15 9 13.657 9 12C9 10.343 10.343 9 12 9Z" 
+      fill="#FDA4AF"
+    />
+    <rect x="6" y="11" width="2" height="0.8" rx="0.4" transform="rotate(30 6 11)" fill="#FFF" />
+    <rect x="10" y="5" width="2" height="0.8" rx="0.4" transform="rotate(-45 10 5)" fill="#FFF" />
+    <rect x="15" y="15" width="2" height="0.8" rx="0.4" transform="rotate(15 15 15)" fill="#FFF" />
+    <rect x="7" y="16" width="2" height="0.8" rx="0.4" transform="rotate(-15 7 16)" fill="#FFF" />
+    <rect x="14" y="9" width="2" height="0.8" rx="0.4" transform="rotate(60 14 9)" fill="#FFF" />
+  </svg>
+);
 
 const getInitials = (name) => {
   if (!name) return "U";
@@ -116,6 +141,20 @@ export default function Header({ onOpenCityModal }) {
           </button>
         </div>
 
+        {/* Navigation Links for Premium Features */}
+        <div className="hidden lg:flex items-center gap-5 mr-4 shrink-0 border-r border-black/[0.06] dark:border-white/[0.06] pr-5">
+          <Link 
+            to="/explorer" 
+            className={`text-[11px] font-black uppercase tracking-widest hover:text-brand transition-colors flex items-center gap-1.5 ${
+              location.pathname === '/explorer' ? 'text-brand' : 'text-neutral-500 dark:text-neutral-400'
+            }`}
+          >
+            {/* professional icon replacement */}
+            {/* remove unnecessary emoji clutter */}
+            <Compass size={13} className="text-brand animate-spin" style={{ animationDuration: '6s' }} /> Explorer
+          </Link>
+        </div>
+
         {/* 4. ACTIONS (Right Side) */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           
@@ -179,7 +218,7 @@ export default function Header({ onOpenCityModal }) {
             className={`w-[32px] h-[32px] rounded-full bg-gradient-to-tr ${user ? getAvatarColor(user.name) : 'from-zinc-400 to-zinc-500 text-white'} flex items-center justify-center border border-black/[0.04] dark:border-white/[0.08] text-[11px] font-bold tracking-wider focus:outline-none overflow-hidden transition-all shadow-xs hover:scale-105 active:scale-95 select-none`}
             aria-label="Profile"
           >
-            {user ? getInitials(user.name) : "U"}
+            <DonutIcon size={18} className="animate-pulse" />
           </Link>
         </div>
         

@@ -81,7 +81,7 @@ export const menuItemImages = {
   "Malai Kofta": "https://www.indianhealthyrecipes.com/wp-content/uploads/2022/06/malai-kofta-recipe.jpg",
   "Tandoori Roti": "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=300&auto=format&fit=crop&q=60",
   "Kadhai Paneer": "https://www.whiskaffair.com/wp-content/uploads/2020/08/Kadai-Paneer-2-3.jpg",
-  "Tandoori Chicken Half": "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=300&auto=format&fit=crop&q=60",
+  "Tandoori Chicken Half": "https://5.imimg.com/data5/SELLER/Default/2024/9/449767423/QD/DS/RG/230584086/tandoori-chicken-half.jpg",
 
   // South Indian
   "Classic Masala Dosa": "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=300&auto=format&fit=crop&q=60",

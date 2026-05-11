@@ -200,13 +200,13 @@ export default function ReviewCard({ review }) {
       {(review.foodQuality || review.deliveryExperience || review.packaging) && (
         <div className="flex flex-wrap items-center gap-2.5 text-[9px] text-gray-400 dark:text-gray-500 font-extrabold uppercase tracking-wider">
           {review.foodQuality && (
-            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-850 px-2.5 py-1 rounded-md">🍔 Food: {review.foodQuality}★</span>
+            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800 px-2.5 py-1 rounded-md">🍔 Food: {review.foodQuality}★</span>
           )}
           {review.deliveryExperience && (
-            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-850 px-2.5 py-1 rounded-md">🛵 Service: {review.deliveryExperience}★</span>
+            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800 px-2.5 py-1 rounded-md">🛵 Service: {review.deliveryExperience}★</span>
           )}
           {review.packaging && (
-            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-850 px-2.5 py-1 rounded-md">📦 Packing: {review.packaging}★</span>
+            <span className="bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800 px-2.5 py-1 rounded-md">📦 Packing: {review.packaging}★</span>
           )}
         </div>
       )}
@@ -232,7 +232,7 @@ export default function ReviewCard({ review }) {
             className={`h-7 px-2.5 rounded-full border text-[10px] font-extrabold flex items-center gap-1 bg-transparent transition-all hover:scale-105 cursor-pointer ${
               reacted.laugh 
                 ? 'border-yellow-400 bg-yellow-400/10 text-yellow-600 dark:text-yellow-400' 
-                : 'border-zinc-250 dark:border-zinc-850 text-zinc-400'
+                : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'
             }`}
           >
             <span>😂</span>
@@ -244,7 +244,7 @@ export default function ReviewCard({ review }) {
             className={`h-7 px-2.5 rounded-full border text-[10px] font-extrabold flex items-center gap-1 bg-transparent transition-all hover:scale-105 cursor-pointer ${
               reacted.heart 
                 ? 'border-red-400 bg-red-400/10 text-red-500' 
-                : 'border-zinc-250 dark:border-zinc-850 text-zinc-400'
+                : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'
             }`}
           >
             <span>❤️</span>
@@ -256,7 +256,7 @@ export default function ReviewCard({ review }) {
             className={`h-7 px-2.5 rounded-full border text-[10px] font-extrabold flex items-center gap-1 bg-transparent transition-all hover:scale-105 cursor-pointer ${
               reacted.fire 
                 ? 'border-orange-400 bg-orange-400/10 text-orange-500' 
-                : 'border-zinc-250 dark:border-zinc-850 text-zinc-400'
+                : 'border-zinc-200 dark:border-zinc-800 text-zinc-400'
             }`}
           >
             <span>🔥</span>

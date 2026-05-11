@@ -1,21 +1,33 @@
 import { create } from 'zustand';
 import { generateReviews } from '../data/reviews';
+import { restaurants } from '../data/restaurants';
+import { getUserJsonItem, setUserItem } from '../utils/storage';
+
+// Helper to safely parse localized reviews counts (e.g., "3.4K reviews", "150 reviews") into accurate integers
+function parseRatingCount(countStr) {
+  if (!countStr) return 150;
+  if (typeof countStr === 'number') return countStr;
+  const num = parseFloat(countStr);
+  if (String(countStr).toLowerCase().includes('k')) {
+    return Math.round(num * 1000);
+  }
+  return Math.round(num);
+}
 
 export const useReviewStore = create((set, get) => {
-  // Safe load custom user reviews from localStorage
+  // Safe load custom user reviews from scoped user localStorage
   const loadStoredReviews = () => {
-    try {
-      const stored = localStorage.getItem('user_custom_reviews');
-      return stored ? JSON.parse(stored) : {};
-    } catch (err) {
-      console.error("Error loading user reviews from localStorage:", err);
-      return {};
-    }
+    return getUserJsonItem('user_custom_reviews', {});
   };
 
   return {
     // Structure: { [restaurantId]: [review1, review2, ...] }
     customReviews: loadStoredReviews(),
+
+    // Rehydrate/refresh state when user logs in or out
+    loadForUser: () => {
+      set({ customReviews: loadStoredReviews() });
+    },
 
     // Retrieve combined reviews (Seed reviews + Custom reviews) for a restaurant
     getReviewsForRestaurant: (restaurantId) => {
@@ -103,18 +115,18 @@ export const useReviewStore = create((set, get) => {
             timestamp: Date.now()
           };
           
-          // // update restaurant average after edit
+          // update restaurant average after edit
           updateRestaurantRatingState(restaurantId, newReview.rating, true, restaurantReviews[existingIdx]?.rating);
         } else {
           // Append new review
           updatedReviews = [newReview, ...updatedReviews];
           
-          // // save review for delivered order
+          // save review for delivered order
           updateRestaurantRatingState(restaurantId, newReview.rating, false, null);
         }
 
         currentCustom[restaurantId] = updatedReviews;
-        localStorage.setItem('user_custom_reviews', JSON.stringify(currentCustom));
+        setUserItem('user_custom_reviews', currentCustom);
         set({ customReviews: currentCustom });
       } catch (err) {
         console.error("Failed to submit review:", err);
@@ -134,8 +146,8 @@ export const useReviewStore = create((set, get) => {
         const updatedReviews = restaurantReviews.filter(r => r.orderId !== orderId);
         currentCustom[restaurantId] = updatedReviews;
 
-        // // remove review from local storage
-        localStorage.setItem('user_custom_reviews', JSON.stringify(currentCustom));
+        // remove review from local storage
+        setUserItem('user_custom_reviews', currentCustom);
         set({ customReviews: currentCustom });
 
         // Recalculate restaurant rating on delete properly
@@ -147,14 +159,18 @@ export const useReviewStore = create((set, get) => {
   };
 });
 
-// Helper to save average rating changes locally so it never loses parity and updates instantly
+// Helper to save average rating changes locally so it never loses parity and updates instantly (Public cache is shared across accounts so everyone sees the updated averages)
 function updateRestaurantRatingState(restaurantId, newRating, isEdit, oldRating) {
   try {
     const ratingsCache = JSON.parse(localStorage.getItem('restaurant_ratings_cache') || '{}');
     if (!ratingsCache[restaurantId]) {
+      const originalRestaurant = (restaurants || []).find(r => r.id === restaurantId);
+      const originalRating = originalRestaurant ? originalRestaurant.rating : 4.6;
+      const originalCount = originalRestaurant ? parseRatingCount(originalRestaurant.ratingCount) : 150;
+      
       ratingsCache[restaurantId] = {
-        rating: 4.6, // Default baseline rating for calculations
-        ratingCount: 150
+        rating: originalRating,
+        ratingCount: originalCount
       };
     }
     
@@ -177,24 +193,34 @@ function updateRestaurantRatingState(restaurantId, newRating, isEdit, oldRating)
   }
 }
 
-// Helper to subtract rating on deletion
+// Helper to subtract rating on deletion (Public cache is shared across accounts)
 function updateRestaurantRatingOnDelete(restaurantId, deletedRating) {
   try {
     const ratingsCache = JSON.parse(localStorage.getItem('restaurant_ratings_cache') || '{}');
-    if (ratingsCache[restaurantId]) {
-      const curr = ratingsCache[restaurantId];
-      if (curr.ratingCount > 1) {
-        const sum = (curr.rating * curr.ratingCount) - Number(deletedRating);
-        curr.ratingCount -= 1;
-        curr.rating = parseFloat((sum / curr.ratingCount).toFixed(1));
-      } else {
-        // Reset to default baseline
-        curr.rating = 4.6;
-        curr.ratingCount = 150;
-      }
-      ratingsCache[restaurantId] = curr;
-      localStorage.setItem('restaurant_ratings_cache', JSON.stringify(ratingsCache));
+    if (!ratingsCache[restaurantId]) {
+      const originalRestaurant = (restaurants || []).find(r => r.id === restaurantId);
+      const originalRating = originalRestaurant ? originalRestaurant.rating : 4.6;
+      const originalCount = originalRestaurant ? parseRatingCount(originalRestaurant.ratingCount) : 150;
+      
+      ratingsCache[restaurantId] = {
+        rating: originalRating,
+        ratingCount: originalCount
+      };
     }
+
+    const curr = ratingsCache[restaurantId];
+    if (curr.ratingCount > 1) {
+      const sum = (curr.rating * curr.ratingCount) - Number(deletedRating);
+      curr.ratingCount -= 1;
+      curr.rating = parseFloat((sum / curr.ratingCount).toFixed(1));
+    } else {
+      // Reset to default baseline
+      const originalRestaurant = (restaurants || []).find(r => r.id === restaurantId);
+      curr.rating = originalRestaurant ? originalRestaurant.rating : 4.6;
+      curr.ratingCount = originalRestaurant ? parseRatingCount(originalRestaurant.ratingCount) : 150;
+    }
+    ratingsCache[restaurantId] = curr;
+    localStorage.setItem('restaurant_ratings_cache', JSON.stringify(ratingsCache));
   } catch (e) {
     console.error("Failed to update rating on delete:", e);
   }

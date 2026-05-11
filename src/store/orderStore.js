@@ -1,12 +1,12 @@
 import { create } from 'zustand';
+import { getUserItem, getUserJsonItem, setUserItem, removeUserItem } from '../utils/storage';
 
 export const useOrderStore = create((set, get) => {
-  // Safe load from localStorage with auto-delivery transition for older pending orders
+  // Safe load from user-scoped localStorage with auto-delivery transition for older pending orders
   const loadStored = (key, fallback) => {
     try {
-      const stored = localStorage.getItem(key);
-      if (!stored) return fallback;
-      const parsed = JSON.parse(stored);
+      const parsed = getUserJsonItem(key, fallback);
+      if (!parsed || parsed === fallback) return fallback;
       
       if (key === 'order_history') {
         const now = Date.now();
@@ -23,7 +23,7 @@ export const useOrderStore = create((set, get) => {
         });
         
         if (updated) {
-          localStorage.setItem('order_history', JSON.stringify(processed));
+          setUserItem('order_history', processed);
         }
         return processed;
       }
@@ -37,21 +37,29 @@ export const useOrderStore = create((set, get) => {
   return {
     activeOrder: loadStored('active_order', null),
     orderHistory: loadStored('order_history', []),
-    trackingStageIdx: Number(localStorage.getItem('tracking_stage_idx') || '0'),
+    trackingStageIdx: Number(getUserItem('tracking_stage_idx', '0')),
+
+    loadForUser: () => {
+      set({
+        activeOrder: loadStored('active_order', null),
+        orderHistory: loadStored('order_history', []),
+        trackingStageIdx: Number(getUserItem('tracking_stage_idx', '0'))
+      });
+    },
 
     setActiveOrder: (order) => {
       if (order) {
         try {
-          localStorage.setItem('active_order', JSON.stringify(order));
-          localStorage.setItem('tracking_stage_idx', '0');
-          localStorage.setItem('latest_order', JSON.stringify(order));
+          setUserItem('active_order', order);
+          setUserItem('tracking_stage_idx', '0');
+          setUserItem('latest_order', order);
           
           const history = get().orderHistory;
           const exists = history.some(o => o.orderId === order.orderId);
           let updatedHistory = history;
           if (!exists) {
             updatedHistory = [order, ...history].slice(0, 20); // Keep last 20 orders
-            localStorage.setItem('order_history', JSON.stringify(updatedHistory));
+            setUserItem('order_history', updatedHistory);
           }
 
           set({ 
@@ -63,22 +71,22 @@ export const useOrderStore = create((set, get) => {
           console.error("Failed to store active order in localStorage:", err);
         }
       } else {
-        localStorage.removeItem('active_order');
-        localStorage.removeItem('tracking_stage_idx');
+        removeUserItem('active_order');
+        removeUserItem('tracking_stage_idx');
         set({ activeOrder: null, trackingStageIdx: 0 });
       }
     },
 
     setTrackingStageIdx: (idx) => {
       try {
-        localStorage.setItem('tracking_stage_idx', idx.toString());
+        setUserItem('tracking_stage_idx', idx.toString());
         set({ trackingStageIdx: idx });
 
         // Synchronize in activeOrder container if available
         const active = get().activeOrder;
         if (active) {
           const updated = { ...active, trackingStageIdx: idx };
-          localStorage.setItem('active_order', JSON.stringify(updated));
+          setUserItem('active_order', updated);
           set({ activeOrder: updated });
         }
       } catch (err) {
@@ -96,13 +104,13 @@ export const useOrderStore = create((set, get) => {
           return o;
         });
 
-        localStorage.setItem('order_history', JSON.stringify(updatedHistory));
+        setUserItem('order_history', updatedHistory);
 
         const active = get().activeOrder;
         let updatedActive = active;
         if (active && active.orderId === orderId) {
           updatedActive = { ...active, orderStatus: "Delivered", deliveredTimestamp: Date.now() };
-          localStorage.setItem('active_order', JSON.stringify(updatedActive));
+          setUserItem('active_order', updatedActive);
         }
 
         set({
@@ -124,13 +132,13 @@ export const useOrderStore = create((set, get) => {
           return o;
         });
 
-        localStorage.setItem('order_history', JSON.stringify(updatedHistory));
+        setUserItem('order_history', updatedHistory);
 
         const active = get().activeOrder;
         let updatedActive = active;
         if (active && active.orderId === orderId) {
           updatedActive = { ...active, rating: ratingData };
-          localStorage.setItem('active_order', JSON.stringify(updatedActive));
+          setUserItem('active_order', updatedActive);
         }
 
         set({
@@ -143,8 +151,8 @@ export const useOrderStore = create((set, get) => {
     },
 
     clearActiveOrder: () => {
-      localStorage.removeItem('active_order');
-      localStorage.removeItem('tracking_stage_idx');
+      removeUserItem('active_order');
+      removeUserItem('tracking_stage_idx');
       set({ activeOrder: null, trackingStageIdx: 0 });
     }
   };

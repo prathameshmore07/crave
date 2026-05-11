@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getUserJsonItem, setUserItem } from '../utils/storage';
 
 const initialNotifications = [
   {
@@ -40,26 +41,21 @@ const initialNotifications = [
 ];
 
 export const useNotificationStore = create((set, get) => {
-  // Try to load notifications from localStorage
+  // Try to load notifications from user-scoped localStorage
   const getStoredNotifications = () => {
-    try {
-      const stored = localStorage.getItem('crave_notifications');
-      return stored ? JSON.parse(stored) : initialNotifications;
-    } catch {
-      return initialNotifications;
-    }
+    return getUserJsonItem('crave_notifications', initialNotifications);
   };
 
   const persist = (notifs) => {
-    try {
-      localStorage.setItem('crave_notifications', JSON.stringify(notifs));
-    } catch (e) {
-      console.error(e);
-    }
+    setUserItem('crave_notifications', notifs);
   };
 
   return {
     notifications: getStoredNotifications(),
+
+    loadForUser: () => {
+      set({ notifications: getStoredNotifications() });
+    },
 
     getUnreadCount: () => {
       return get().notifications.filter(n => !n.isRead).length;

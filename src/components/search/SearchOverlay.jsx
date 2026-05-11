@@ -5,6 +5,8 @@ import { useCityStore } from '../../store/cityStore';
 import { restaurants } from '../../data/restaurants';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Search, ArrowLeft, X, Store, Utensils, Hash, History, Flame } from 'lucide-react';
+import { getUserJsonItem, setUserItem, removeUserItem } from '../../utils/storage';
+import { useAuthStore } from '../../store/authStore';
 import logo from '../../assets/logo.png';
 
 const trendingSearches = [
@@ -24,10 +26,12 @@ export default function SearchOverlay() {
   // Debounce query (180ms as requested)
   const debouncedQuery = useDebounce(query, 180);
 
+  const user = useAuthStore((state) => state.user);
+
   // Load recent searches
   useEffect(() => {
     if (searchOpen) {
-      const stored = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+      const stored = getUserJsonItem('recent_searches', []);
       setRecentSearches(stored);
       // Autofocus input
       setTimeout(() => {
@@ -36,7 +40,7 @@ export default function SearchOverlay() {
         }
       }, 50);
     }
-  }, [searchOpen]);
+  }, [searchOpen, user]);
 
   // Escape and global trigger (⌘K / Ctrl+K / /) listeners
   useEffect(() => {
@@ -116,9 +120,9 @@ export default function SearchOverlay() {
     if (!searchTerm.trim()) return;
 
     // Save to recents
-    const stored = JSON.parse(localStorage.getItem('recent_searches') || '[]');
+    const stored = getUserJsonItem('recent_searches', []);
     const updated = [searchTerm, ...stored.filter((s) => s !== searchTerm)].slice(0, 5);
-    localStorage.setItem('recent_searches', JSON.stringify(updated));
+    setUserItem('recent_searches', updated);
     setRecentSearches(updated);
 
     setSearchOpen(false);
@@ -126,7 +130,7 @@ export default function SearchOverlay() {
   };
 
   const clearRecents = () => {
-    localStorage.removeItem('recent_searches');
+    removeUserItem('recent_searches');
     setRecentSearches([]);
   };
 
@@ -207,7 +211,7 @@ export default function SearchOverlay() {
                         <button
                           onClick={() => {
                             const updated = recentSearches.filter((s) => s !== term);
-                            localStorage.setItem('recent_searches', JSON.stringify(updated));
+                            setUserItem('recent_searches', updated);
                             setRecentSearches(updated);
                           }}
                           className="p-0.5 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.05] text-zinc-400 dark:text-zinc-500 hover:text-[--brand] focus:outline-none transition-colors"

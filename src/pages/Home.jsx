@@ -4,6 +4,7 @@ import { useCityStore } from '../store/cityStore';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { useUiStore } from '../store/uiStore';
+import { useOrderStore } from '../store/orderStore';
 import { fetchRestaurants } from '../services/api';
 import HeroBanner from '../components/home/HeroBanner';
 import CuisineTiles from '../components/home/CuisineTiles';
@@ -39,19 +40,16 @@ export default function Home() {
     collections: false
   });
 
-  // Load past orders from localStorage on mount
+  const orderHistory = useOrderStore((state) => state.orderHistory);
+
+  // Load past orders from user-scoped useOrderStore on mount / update
   useEffect(() => {
-    try {
-      const orders = JSON.parse(localStorage.getItem('past_orders') || '[]');
-      if (orders.length > 0) {
-        setPastOrders(orders.slice(0, 3));
-      } else if (user?.orderHistory && user.orderHistory.length > 0) {
-        setPastOrders(user.orderHistory.slice(0, 3));
-      }
-    } catch (err) {
-      console.error("Failed to parse past orders:", err);
+    if (orderHistory && orderHistory.length > 0) {
+      setPastOrders(orderHistory.slice(0, 3));
+    } else {
+      setPastOrders([]);
     }
-  }, [user]);
+  }, [orderHistory]);
 
   useEffect(() => {
     if (selectedCity) {

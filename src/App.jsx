@@ -19,6 +19,7 @@ import Checkout from './pages/Checkout';
 import Tracking from './pages/Tracking';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
+import FoodExplorer from './pages/FoodExplorer';
 import NotFound from './pages/NotFound';
 import { Toaster } from 'sonner';
 import logo from './assets/logo.png';
@@ -133,6 +134,12 @@ export default function App() {
                 <Profile />
               </PrivateRoute>
             } />
+            <Route path="/explorer" element={
+              <PrivateRoute>
+                <FoodExplorer />
+              </PrivateRoute>
+            } />
+
 
             {/* Error route matches */}
             <Route path="*" element={<NotFound />} />

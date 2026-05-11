@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUiStore } from '../../store/uiStore';
-import { Home, Search, Tag, ClipboardList, User } from 'lucide-react';
+import { Home, Flame, Search, ClipboardList, User } from 'lucide-react';
 
 export default function BottomNav() {
   const navigate = useNavigate();
@@ -20,8 +20,8 @@ export default function BottomNav() {
 
   const tabs = [
     { id: 'home', label: 'Home', icon: Home, path: '/' },
+    { id: 'explorer', label: 'Explorer', icon: Flame, path: '/explorer' },
     { id: 'search', label: 'Search', icon: Search, path: '#' },
-    { id: 'offers', label: 'Offers', icon: Tag, path: '/restaurants?offers=true' },
     { id: 'orders', label: 'Orders', icon: ClipboardList, path: '/profile?tab=orders' },
     { id: 'profile', label: 'Profile', icon: User, path: '/profile' }
   ];
@@ -39,7 +39,7 @@ export default function BottomNav() {
           isActive = true;
         } else if (tab.id === 'orders' && currentPath === '/profile' && location.search.includes('tab=orders')) {
           isActive = true;
-        } else if (tab.id === 'offers' && currentPath === '/restaurants' && location.search.includes('offers=true')) {
+        } else if (tab.id === 'explorer' && currentPath === '/explorer') {
           isActive = true;
         }
 

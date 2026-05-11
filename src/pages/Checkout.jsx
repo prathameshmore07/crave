@@ -6,6 +6,7 @@ import { useOrderStore } from '../store/orderStore';
 import AddressStep from '../components/checkout/AddressStep';
 import PaymentStep from '../components/checkout/PaymentStep';
 import ProcessingStep from '../components/checkout/ProcessingStep';
+import CheckoutBillSplitter from '../components/checkout/CheckoutBillSplitter';
 import { formatPrice } from '../utils/formatPrice';
 import { ShoppingBag, ArrowLeft, ShieldCheck, MapPin, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
@@ -94,15 +95,6 @@ export default function Checkout() {
 
     setCreatedOrder(newOrder);
     setConfirmedTotal(orderFinalTotal);
-
-    // Save to past_orders in localStorage for the "Order again" homepage section
-    try {
-      const existingOrders = JSON.parse(localStorage.getItem('past_orders') || '[]');
-      const updatedOrders = [newOrder, ...existingOrders].slice(0, 5);
-      localStorage.setItem('past_orders', JSON.stringify(updatedOrders));
-    } catch (err) {
-      console.error("Failed to save order to localStorage:", err);
-    }
     
     // clear cart immediately after successful payment
     // prevent stale cart restoration on browser back
@@ -119,8 +111,8 @@ export default function Checkout() {
 
   if (checkoutStep === 3) {
     return (
-      <div className="fixed inset-0 z-[1000] bg-stone-50 dark:bg-dark-bg flex items-center justify-center p-4 overflow-hidden animate-fade-in">
-        <div className="w-full max-w-md">
+      <div className="fixed inset-0 z-[1000] bg-stone-50 dark:bg-dark-bg flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+        <div className="w-full max-w-[420px] py-3 md:py-6">
           <ProcessingStep orderDetails={createdOrder} orderTotal={confirmedTotal || finalTotal} />
         </div>
       </div>
@@ -262,6 +254,9 @@ export default function Checkout() {
                 </span>
               </div>
             </div>
+
+            {/* Natural Collapsible Bill Splitter */}
+            <CheckoutBillSplitter />
 
             <div className="flex items-center gap-1.5 p-3 rounded-lg bg-gray-50 dark:bg-dark-surface/40 text-[10px] text-gray-400 font-semibold uppercase tracking-wider justify-center">
               <ShieldCheck size={14} className="text-success animate-pulse" />

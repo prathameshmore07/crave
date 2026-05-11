@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, Loader2, Sparkles, ShieldCheck, Receipt, ShoppingBag, 
-  ArrowRight, Home, Star, MapPin, Copy, X, Lock
+  ArrowRight, Home, Star, MapPin, Copy, X, Lock, Gift, Clock, CreditCard
 } from 'lucide-react';
 import { formatPrice } from '../../utils/formatPrice';
 import { toast } from 'sonner';
-import DishImage from '../common/DishImage';
+import { menuItemImages } from '../../data/restaurants';
 
 // use shared brand assets across payment flow
 import logo from '../../assets/logo.png';
@@ -48,11 +48,16 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
   const copyOrderId = () => {
     if (orderDetails?.orderId) {
       navigator.clipboard.writeText(orderDetails.orderId);
-      toast.success("Order ID copied!", {
+      toast.success("Order ID copied to clipboard!", {
         position: 'bottom-center',
         duration: 1200
       });
     }
+  };
+
+  const getItemImage = (itemName) => {
+    const cleanName = itemName?.replace(" Extra", "");
+    return menuItemImages[cleanName] || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80";
   };
 
   // Calculations for bill receipt
@@ -62,13 +67,13 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
   }, 0) || (orderTotal > 67 ? orderTotal - 67 : orderTotal);
 
   const discount = orderDetails?.discount || 0;
-  const deliveryFee = orderDetails?.deliveryFee || 35;
+  const deliveryFee = orderDetails?.deliveryFee || 0; // Default zero or computed
   const gst = Math.round(subtotal * 0.05);
   const platformFee = 2;
   const packagingCharge = 15;
 
   return (
-    <div className="relative overflow-visible w-full flex items-center justify-center p-1">
+    <div className="relative overflow-visible w-full flex items-center justify-center p-1 font-inter">
       <AnimatePresence mode="wait">
         {!isDone ? (
           <motion.div
@@ -76,84 +81,86 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
-            className="w-full max-w-md p-5 bg-white dark:bg-dark-surface border border-black/[0.06] dark:border-white/[0.06] rounded-[24px] space-y-6 shadow-xl relative overflow-hidden text-center"
+            className="w-full max-w-md p-6 bg-zinc-950 border border-zinc-900 rounded-[28px] space-y-6 shadow-2xl relative overflow-hidden text-center"
           >
             {/* Ambient Brand Glow */}
-            <div className="absolute -right-16 -top-16 w-32 h-32 bg-brand/8 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -right-16 -top-16 w-36 h-36 bg-brand/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+            <div className="absolute -left-16 -bottom-16 w-36 h-36 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
             {/* Branded Header */}
-            <div className="flex flex-col items-center space-y-2.5 relative z-10">
-              <img src={logo} alt="CRAVE Logo" className="h-[28px] w-auto object-contain" />
-              <span className="text-[8px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-[0.25em]">Gourmet Delivered Instantly</span>
+            <div className="flex flex-col items-center space-y-2 relative z-10">
+              <img src={logo} alt="CRAVE Logo" className="h-[32px] w-auto object-contain" />
+              <span className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-[0.3em]">Gourmet Delivered Instantly</span>
             </div>
 
             {/* Compact Progress Ring */}
-            <div className="relative flex items-center justify-center w-20 h-20 mx-auto">
+            <div className="relative flex items-center justify-center w-24 h-24 mx-auto my-4">
               <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="42" className="stroke-gray-100 dark:stroke-neutral-850" strokeWidth="4" fill="transparent" />
+                <circle cx="50" cy="50" r="42" className="stroke-zinc-900" strokeWidth="3.5" fill="transparent" />
                 <motion.circle 
-                  cx="50" cy="50" r="42" className="stroke-brand" strokeWidth="4.5" fill="transparent" 
-                  strokeDasharray="263.89"
-                  initial={{ strokeDashoffset: 263.89 }}
-                  animate={{ strokeDashoffset: 263.89 - (263.89 * (currentStepIdx / loadingSteps.length)) }}
-                  transition={{ duration: 0.6 }}
-                  strokeLinecap="round"
+                   cx="50" cy="50" r="42" className="stroke-brand" strokeWidth="4.5" fill="transparent" 
+                   strokeDasharray="263.89"
+                   initial={{ strokeDashoffset: 263.89 }}
+                   animate={{ strokeDashoffset: 263.89 - (263.89 * (currentStepIdx / loadingSteps.length)) }}
+                   transition={{ duration: 0.6 }}
+                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute flex items-center justify-center">
-                <div className="w-11 h-11 rounded-xl bg-white dark:bg-neutral-850 p-0.5 shadow-sm border border-black/[0.03] dark:border-white/[0.03] flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-xl bg-zinc-900 p-0.5 shadow-md border border-zinc-800 flex items-center justify-center overflow-hidden animate-pulse">
                   <img src="/favicon.jpg" alt="Favicon" className="w-full h-full rounded-lg object-cover" />
                 </div>
               </div>
-              <div className="absolute -bottom-1 bg-brand text-white text-[8px] font-black px-1.5 py-0.5 rounded-full font-mono tracking-wider shadow-xs">
+              <div className="absolute -bottom-1.5 bg-brand text-white text-[9px] font-black px-2 py-0.5 rounded-full font-mono tracking-wider shadow-md">
                 {Math.round((currentStepIdx / loadingSteps.length) * 100)}%
               </div>
             </div>
 
-            <div className="text-center space-y-1">
-              <h3 className="text-sm font-black text-gray-850 dark:text-gray-100 flex items-center justify-center gap-1">
-                <ShieldCheck className="text-brand w-4 h-4" /> Secure checkout loading
+            <div className="text-center space-y-1.5">
+              <h3 className="text-sm font-black text-zinc-100 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="text-brand w-4.5 h-4.5 animate-pulse" /> Secure Checkout Loading
               </h3>
-              <p className="text-[10px] text-gray-400 font-semibold">Ensuring end-to-end payment encryption</p>
+              <p className="text-[11px] text-zinc-400 font-medium">Ensuring end-to-end multi-node encryption</p>
             </div>
 
             {/* Compact Steps List */}
-            <div className="space-y-2 relative z-10 text-left">
+            <div className="space-y-2.5 relative z-10 text-left pt-2">
               {loadingSteps.map((s, idx) => {
                 const isCompleted = idx < currentStepIdx;
                 const isActive = idx === currentStepIdx;
                 return (
                   <div 
                     key={s.id} 
-                    className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all duration-200 ${
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 ${
                       isActive 
-                        ? 'bg-brand/[0.02] border-brand/15 dark:bg-brand/[0.01]' 
+                        ? 'bg-brand/5 border-brand/30 scale-[1.01]' 
                         : isCompleted
-                        ? 'border-emerald-500/10 bg-emerald-500/[0.01]'
+                        ? 'border-emerald-500/20 bg-emerald-500/5'
                         : 'border-transparent opacity-20'
                     }`}
                   >
                     <div className="flex-shrink-0">
                       {isCompleted ? (
-                        <span className="w-4.5 h-4.5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-bold">
-                          <Check size={9} strokeWidth={3} />
+                        <span className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold shadow-sm">
+                          <Check size={10} strokeWidth={3} />
                         </span>
                       ) : isActive ? (
-                        <span className="w-4.5 h-4.5 rounded-full bg-brand text-white flex items-center justify-center text-[9px] font-bold">
-                          <Loader2 size={9} className="animate-spin" />
+                        <span className="w-5 h-5 rounded-full bg-brand text-white flex items-center justify-center text-[10px] font-bold shadow-md shadow-brand/20">
+                          <Loader2 size={10} className="animate-spin" />
                         </span>
                       ) : (
-                        <span className="w-4.5 h-4.5 rounded-full border border-gray-200 dark:border-neutral-800 text-gray-400 flex items-center justify-center text-[8px] font-bold font-mono">
+                        <span className="w-5 h-5 rounded-full border border-zinc-800 text-zinc-500 flex items-center justify-center text-[9px] font-bold font-mono">
                           {s.id}
                         </span>
                       )}
                     </div>
                     <div className="min-w-0 flex-1 leading-tight">
-                      <div className={`text-[10px] font-black tracking-tight ${
-                        isActive ? 'text-brand' : isCompleted ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500'
+                      <div className={`text-[11px] font-black tracking-tight ${
+                        isActive ? 'text-brand' : isCompleted ? 'text-emerald-400' : 'text-zinc-500'
                       }`}>
                         {s.label}
                       </div>
+                      <div className="text-[9px] text-zinc-500 mt-0.5 font-medium">{s.desc}</div>
                     </div>
                   </div>
                 );
@@ -161,9 +168,9 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
             </div>
 
             {/* Branded Security Footnote */}
-            <div className="pt-3.5 border-t border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between text-[8px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">
-              <span className="flex items-center gap-1">
-                <Lock size={9} className="text-emerald-500" /> Secure SSL
+            <div className="pt-4 border-t border-zinc-900 flex items-center justify-between text-[8px] text-zinc-500 uppercase tracking-widest font-black">
+              <span className="flex items-center gap-1.5">
+                <Lock size={9} className="text-emerald-500 animate-pulse" /> Secure SSL 256-Bit
               </span>
               <span>CRAVE SAFE SHIELD</span>
             </div>
@@ -171,110 +178,272 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
         ) : (
           <motion.div
             key="success-container"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md p-7 sm:p-8 bg-white dark:bg-dark-surface border border-black/[0.04] dark:border-white/[0.04] rounded-[28px] space-y-6 shadow-2xl relative text-center overflow-hidden"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            className="w-full max-w-[420px] mx-auto bg-zinc-950 border border-zinc-900 rounded-[24px] p-4.5 sm:p-5 space-y-4 shadow-2xl relative overflow-hidden"
           >
-            {/* Minimalist Top Bar */}
-            <div className="flex items-center justify-between">
-              <img src={logo} alt="CRAVE Logo" className="h-[22px] w-auto object-contain" />
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-widest flex items-center gap-1.5">
-                <ShieldCheck size={12} strokeWidth={2.5} className="text-emerald-500" /> Secure Payment Approved
-              </div>
-            </div>
+            {/* Soft Ambient Brand Gradients */}
+            <div className="absolute -right-32 -top-32 w-64 h-64 bg-brand/10 rounded-full blur-[90px] pointer-events-none" />
+            <div className="absolute -left-32 -bottom-32 w-64 h-64 bg-emerald-500/5 rounded-full blur-[90px] pointer-events-none" />
 
-            {/* Pulsing Visual Checkmark */}
-            <div className="pt-2">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/15 animate-pulse">
-                <Check size={26} strokeWidth={3} />
-              </div>
-            </div>
-
-            {/* Clean Typography Title & Subtitle */}
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight leading-none">
-                Order Placed Successfully!
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold leading-relaxed">
-                We've transmitted your recipe instructions to the kitchen.
-              </p>
-            </div>
-
-            {/* Elegant Live Status Indicator (Zero Border, Pure Micro-Animation) */}
-            <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-450 text-xs font-black py-0.5 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Kitchen is preparing your fresh order...</span>
-            </div>
-
-            {/* Premium Dashed Digital Receipt Slip (Extremely Clean, Zero Clutter) */}
-            <div className="py-4 border-y border-dashed border-black/[0.06] dark:border-white/[0.06] space-y-3.5 text-left text-xs">
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-gray-400 font-black uppercase tracking-wider text-[9px] shrink-0">Culinary Partner</span>
-                <span className="font-black text-gray-850 dark:text-gray-100 truncate max-w-[200px]">
-                  {orderDetails?.restaurantName || "CRAVE Partner Restaurant"}
-                </span>
+            {/* SECTION 1: SUCCESS HERO */}
+            <div className="flex flex-col items-center text-center space-y-2 pt-1 relative">
+              <div className="relative flex items-center justify-center">
+                {/* Outer pulsing ring - simplified & smaller */}
+                <motion.div 
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                  className="absolute w-14 h-14 bg-emerald-500/10 rounded-full"
+                />
+                
+                {/* Core Check Circle - smaller w-9 h-9 */}
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 16 }}
+                  className="relative w-9 h-9 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-md shadow-emerald-500/10"
+                >
+                  <motion.svg 
+                    width="15" 
+                    height="15" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="3.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <motion.path 
+                      d="M20 6L9 17l-5-5"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5, ease: "easeInOut" }}
+                    />
+                  </motion.svg>
+                </motion.div>
               </div>
               
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-gray-400 font-black uppercase tracking-wider text-[9px] shrink-0">Items Summary</span>
-                <span className="font-bold text-gray-650 dark:text-gray-300 truncate max-w-[200px]">
-                  {orderDetails?.items?.map(item => `${item.quantity}x ${item.name}`).join(', ')}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-gray-400 font-black uppercase tracking-wider text-[9px] shrink-0">Transaction ID</span>
-                <button 
-                  onClick={copyOrderId} 
-                  className="font-mono font-bold text-brand hover:text-brand-hover text-[10px] tracking-wider uppercase flex items-center gap-1 cursor-pointer outline-none bg-transparent"
-                  title="Click to copy order ID"
+              <div className="space-y-0.5 z-10">
+                <motion.h3 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-lg font-black text-zinc-50 tracking-tight"
                 >
-                  {orderDetails?.orderId || "CRV-ORDER"} <Copy size={9} />
-                </button>
+                  Order Confirmed
+                </motion.h3>
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="text-[11px] text-zinc-400 font-medium"
+                >
+                  Your meal is now being freshly prepared.
+                </motion.p>
               </div>
-
-              <div className="flex justify-between items-center gap-3 pt-0.5">
-                <span className="text-gray-400 font-black uppercase tracking-wider text-[9px] shrink-0">Amount Charged</span>
-                <span className="font-black text-brand text-sm">{formatPrice(orderTotal)}</span>
-              </div>
-
-              {orderDetails?.riderInfo && (
-                <div className="flex justify-between items-center gap-3 border-t border-dashed border-black/[0.04] dark:border-white/[0.04] pt-3.5">
-                  <span className="text-gray-400 font-black uppercase tracking-wider text-[9px] shrink-0">Assigned Rider</span>
-                  <span className="font-extrabold text-gray-850 dark:text-gray-100 flex items-center gap-1">
-                    <span>🛵 {orderDetails.riderInfo.name}</span>
-                    <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md font-black ml-1.5 flex items-center gap-0.5 leading-none">
-                      ★ {orderDetails.riderInfo.rating}
-                    </span>
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Premium Minimal CTA Grid */}
-            <div className="space-y-4 pt-1">
+            {/* SECTION 2: DELIVERY ETA PROGRESS */}
+            <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-3.5 space-y-3">
+              {/* Header row with ETA and Payment Info */}
+              <div className="flex items-center justify-between text-[10px] font-bold">
+                <div className="flex items-center gap-1 text-zinc-400">
+                  <Clock size={11} className="text-brand" />
+                  <span>ETA: <span className="text-zinc-100 font-extrabold">{orderDetails?.ETA || 30} mins</span></span>
+                </div>
+                <div className="text-zinc-400 flex items-center gap-1">
+                  <CreditCard size={11} className="text-zinc-500" />
+                  <span>Paid via {orderDetails?.paymentMethod || "UPI"}</span>
+                </div>
+              </div>
+
+              {/* Linear Progress Timeline */}
+              <div className="relative pt-1 pb-0.5">
+                {/* Track base */}
+                <div className="absolute top-[13px] left-[6%] right-[6%] h-[2px] bg-zinc-900 rounded-full" />
+                {/* Active progress */}
+                <motion.div 
+                  initial={{ width: "0%" }}
+                  animate={{ width: "38%" }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  className="absolute top-[13px] left-[6%] h-[2px] bg-gradient-to-r from-emerald-500 to-brand rounded-full"
+                />
+
+                {/* Timeline Steps */}
+                <div className="grid grid-cols-4 relative z-10">
+                  {[
+                    { label: "Confirmed", icon: "✓", active: true, done: true },
+                    { label: "Preparing", icon: "🍳", active: true, done: false, pulse: true },
+                    { label: "Transit", icon: "🛵", active: false, done: false },
+                    { label: "Delivered", icon: "🏠", active: false, done: false }
+                  ].map((step, idx) => (
+                    <div key={idx} className="flex flex-col items-center text-center space-y-1">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] border transition-all ${
+                        step.done 
+                          ? 'bg-emerald-500 border-emerald-500 text-black font-extrabold'
+                          : step.pulse
+                            ? 'bg-brand/15 border-brand text-brand animate-pulse'
+                            : 'bg-zinc-950 border-zinc-900 text-zinc-500'
+                      }`}>
+                        <span className={step.pulse ? 'scale-110' : ''}>{step.icon}</span>
+                      </div>
+                      <span className={`text-[8px] font-bold uppercase tracking-wider ${
+                        step.active ? 'text-zinc-300' : 'text-zinc-500'
+                      }`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: ORDER SUMMARY CARD */}
+            <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl overflow-hidden divide-y divide-zinc-900/50">
+              {/* Summary Card Header - compacted */}
+              <div className="p-3 flex items-center justify-between">
+                <div className="min-w-0">
+                  <span className="text-[8px] text-zinc-550 font-extrabold uppercase tracking-wider block">Kitchen Partner</span>
+                  <h4 className="text-xs font-bold text-zinc-200 truncate">
+                    {orderDetails?.restaurantName || "CRAVE Culinary Studio"}
+                  </h4>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-[8px] text-zinc-550 font-extrabold uppercase tracking-wider block">Order Code</span>
+                  <button 
+                    onClick={copyOrderId}
+                    className="text-[9px] font-mono font-bold text-brand hover:text-brand-hover flex items-center gap-1 ml-auto focus:outline-none"
+                    title="Copy Order ID"
+                  >
+                    {orderDetails?.orderId || "CRV-ORDER"} <Copy size={8} className="text-zinc-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Ordered Items List - highly compacted */}
+              <div className="p-3 space-y-2 max-h-[120px] overflow-y-auto divide-y divide-zinc-950/20">
+                {orderDetails?.items?.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="flex justify-between items-center gap-2 pt-2 first:pt-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-900 flex-shrink-0">
+                        <img 
+                          src={getItemImage(item.name)} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&q=80";
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.isVeg ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          <p className="text-xs font-bold text-zinc-200 truncate">{item.name}</p>
+                        </div>
+                        {item.selectedCustomizations && item.selectedCustomizations.length > 0 && (
+                          <p className="text-[9px] text-zinc-500 font-semibold truncate mt-0.5">
+                            {item.selectedCustomizations.map(c => c.name || c.label).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[9px] font-bold bg-zinc-950 border border-zinc-900 text-zinc-400 px-1.5 py-0.5 rounded-md">
+                        × {item.quantity}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-zinc-300">
+                        {formatPrice(item.price * item.quantity)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pricing breakdown inside Card - compacted */}
+              <div className="p-3 bg-zinc-950/20 text-[10.5px] space-y-2 font-semibold text-zinc-450">
+                <div className="flex justify-between items-center">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-550">Items Subtotal</span>
+                  <span className="font-mono text-zinc-350">{formatPrice(subtotal)}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between items-center text-emerald-400">
+                    <span className="text-[8px] font-bold uppercase tracking-wider">Applied Coupon</span>
+                    <span className="font-mono">- {formatPrice(discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-zinc-550">
+                  <span className="text-[8px] font-bold uppercase tracking-wider">Fees & Taxes</span>
+                  <span className="font-mono text-zinc-450">{formatPrice(gst + platformFee + packagingCharge)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-zinc-900 font-black text-zinc-100">
+                  <span className="text-[9px] font-bold uppercase tracking-wider">Amount Paid</span>
+                  <span className="font-mono text-brand text-xs">{formatPrice(orderTotal)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 4: ASSIGNED RIDER CARD (Premium Compact Row) */}
+            {orderDetails?.riderInfo && (
+              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Rider Avatar with Soft Pulse Indicator */}
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-zinc-950 border border-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <span className="text-xs font-bold text-brand uppercase">{orderDetails.riderInfo.name?.[0] || 'R'}</span>
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-zinc-950 animate-pulse" />
+                  </div>
+                  
+                  <div className="min-w-0 text-left">
+                    <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-wider block">Your Delivery Captain</span>
+                    <span className="text-xs font-bold text-zinc-200 block truncate">
+                      {orderDetails.riderInfo.name}
+                    </span>
+                    <span className="text-[8px] text-zinc-400 font-medium block">
+                      ⚡ EV Captain • ETA 18 mins
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 text-[9px] font-bold text-amber-400 bg-amber-400/5 border border-amber-400/10 px-1.5 py-0.5 rounded-md">
+                    <Star size={9} className="fill-amber-400 text-amber-400 animate-pulse" />
+                    <span>{orderDetails.riderInfo.rating || '4.9'}</span>
+                  </div>
+                  <span className="text-[8px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Verified
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 5: PRIMARY CTA & SECONDARY ACTIONS */}
+            <div className="space-y-3 pt-1 relative z-10">
               <button
                 onClick={handleTrackClick}
-                className="h-11.5 w-full bg-brand hover:bg-brand-hover text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-brand/10 cursor-pointer flex items-center justify-center gap-2 focus:outline-none"
+                className="h-10 w-full bg-brand hover:bg-brand/90 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-brand/5 cursor-pointer flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-[0.99] outline-none border-none"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
-                Track Live Order Location
-                <ArrowRight size={12} />
+                Track Live Order
+                <ArrowRight size={13} strokeWidth={2.5} />
               </button>
 
-              <div className="flex items-center justify-center gap-5 text-[10px] font-black uppercase tracking-widest text-gray-450 dark:text-gray-400 pt-1">
+              <div className="flex items-center justify-center gap-4 text-[9px] font-bold uppercase tracking-widest text-zinc-500 pt-0.5">
                 <button
                   onClick={() => setShowReceipt(true)}
-                  className="hover:text-brand transition-colors cursor-pointer outline-none flex items-center gap-1.5"
+                  className="hover:text-brand transition-colors cursor-pointer outline-none bg-transparent flex items-center gap-1 focus:outline-none border-none"
                 >
-                  <Receipt size={12} /> View Bill Receipt
+                  <Receipt size={12} /> View Digital Invoice
                 </button>
-                <span className="text-gray-200 dark:text-neutral-800">|</span>
+                <span className="text-zinc-800">|</span>
                 <button
                   onClick={handleContinueOrdering}
-                  className="hover:text-brand transition-colors cursor-pointer outline-none flex items-center gap-1.5"
+                  className="hover:text-brand transition-colors cursor-pointer outline-none bg-transparent flex items-center gap-1 focus:outline-none border-none"
                 >
-                  <Home size={12} /> Return to Home
+                  <Home size={11} /> Back to Hub
                 </button>
               </div>
             </div>
@@ -285,45 +454,45 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
       {/* Receipts Drawer Modal */}
       <AnimatePresence>
         {showReceipt && (
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-[2000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[2000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/10 text-gray-800 dark:text-gray-100 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl p-5 relative flex flex-col max-h-[85vh]"
+              className="bg-zinc-950 border border-zinc-900 text-zinc-100 w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl p-6 relative flex flex-col max-h-[85vh]"
             >
               <button 
                 onClick={() => setShowReceipt(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-400 transition-colors"
+                className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-zinc-900 text-zinc-500 transition-colors"
               >
-                <X size={14} />
+                <X size={15} />
               </button>
 
-              <div className="flex flex-col items-center text-center pb-4 border-b border-dashed border-black/10 dark:border-white/10 mt-1">
-                <img src={logo} alt="CRAVE Logo" className="h-[24px] w-auto object-contain mb-1" />
-                <h4 className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-gray-100">CRAVE RETAIL RECEIPT</h4>
-                <p className="text-[9px] text-gray-400 font-semibold mt-1">Order Date: {orderDetails?.date || "Today"}</p>
-                <p className="text-[9px] font-mono text-brand font-bold uppercase tracking-wider">ID: {orderDetails?.orderId}</p>
+              <div className="flex flex-col items-center text-center pb-4 border-b border-dashed border-zinc-800 mt-1">
+                <img src={logo} alt="CRAVE Logo" className="h-[28px] w-auto object-contain mb-1.5" />
+                <h4 className="text-xs font-black uppercase tracking-widest text-zinc-200">CRAVE RETAIL RECEIPT</h4>
+                <p className="text-[9px] text-zinc-500 font-semibold mt-1">Order Date: {orderDetails?.date || "Today"}</p>
+                <p className="text-[9px] font-mono text-brand font-bold uppercase tracking-wider mt-0.5">ID: {orderDetails?.orderId}</p>
               </div>
 
               {/* Items list inside modal */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-3 divide-y divide-black/[0.03] dark:divide-white/[0.03]">
+              <div className="flex-1 overflow-y-auto py-4 space-y-3.5 divide-y divide-zinc-900">
                 {orderDetails?.items?.map((item, idx) => {
                   const itemCustomCost = (item.selectedCustomizations || []).reduce((sum, c) => sum + (c.price || 0), 0);
                   return (
-                    <div key={item.id || idx} className={`flex justify-between items-start pt-2.5 text-[11px] ${idx === 0 ? 'pt-0' : ''}`}>
+                    <div key={item.id || idx} className={`flex justify-between items-start pt-3.5 text-xs ${idx === 0 ? 'pt-0' : ''}`}>
                       <div className="min-w-0 pr-4">
-                        <div className="flex items-center gap-1">
-                          <span className="font-bold text-gray-800 dark:text-gray-200">{item.name}</span>
-                          <span className="text-[9px] text-brand font-black">×{item.quantity}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-zinc-200">{item.name}</span>
+                          <span className="text-[9px] text-brand font-black bg-brand/10 px-1.5 py-0.5 rounded">×{item.quantity}</span>
                         </div>
                         {item.selectedCustomizations && item.selectedCustomizations.length > 0 && (
-                          <div className="text-[8px] text-gray-400 dark:text-gray-500 pl-1 mt-0.5">
-                            {item.selectedCustomizations.map(c => c.label).join(', ')}
+                          <div className="text-[9px] text-zinc-500 pl-1 mt-1">
+                            {item.selectedCustomizations.map(c => c.label || c.name).join(', ')}
                           </div>
                         )}
                       </div>
-                      <span className="font-bold text-gray-950 dark:text-white font-mono">
+                      <span className="font-bold text-zinc-100 font-mono flex-shrink-0">
                         {formatPrice((item.price + itemCustomCost) * item.quantity)}
                       </span>
                     </div>
@@ -331,36 +500,36 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
                 })}
               </div>
 
-              <div className="pt-3 border-t border-black/10 dark:border-white/10 space-y-2 text-[11px]">
-                <div className="flex justify-between text-gray-400 font-bold uppercase text-[8px] tracking-wider">
+              <div className="pt-4 border-t border-zinc-900 space-y-2 text-xs">
+                <div className="flex justify-between text-zinc-500 font-bold uppercase text-[9px] tracking-wider">
                   <span>Subtotal</span>
-                  <span className="font-mono text-[10px] text-gray-850 dark:text-gray-200">{formatPrice(subtotal)}</span>
+                  <span className="font-mono text-zinc-350">{formatPrice(subtotal)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-emerald-500 font-bold uppercase text-[8px] tracking-wider">
+                  <div className="flex justify-between text-emerald-400 font-bold uppercase text-[9px] tracking-wider">
                     <span>Discount</span>
-                    <span className="font-mono text-[10px]">- {formatPrice(discount)}</span>
+                    <span className="font-mono">- {formatPrice(discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-gray-400 font-bold uppercase text-[8px] tracking-wider">
+                <div className="flex justify-between text-zinc-500 font-bold uppercase text-[9px] tracking-wider">
                   <span>Delivery Fee</span>
-                  <span className="font-mono text-[10px] text-gray-850 dark:text-gray-200">{deliveryFee === 0 ? "FREE" : formatPrice(deliveryFee)}</span>
+                  <span className="font-mono text-zinc-350">{deliveryFee === 0 ? "FREE" : formatPrice(deliveryFee)}</span>
                 </div>
-                <div className="flex justify-between text-gray-400 font-bold uppercase text-[8px] tracking-wider">
+                <div className="flex justify-between text-zinc-500 font-bold uppercase text-[9px] tracking-wider">
                   <span>GST (5%)</span>
-                  <span className="font-mono text-[10px] text-gray-850 dark:text-gray-200">{formatPrice(gst)}</span>
+                  <span className="font-mono text-zinc-350">{formatPrice(gst)}</span>
                 </div>
-                <div className="flex justify-between text-gray-400 font-bold uppercase text-[8px] tracking-wider">
+                <div className="flex justify-between text-zinc-500 font-bold uppercase text-[9px] tracking-wider">
                   <span>Fees & Packaging</span>
-                  <span className="font-mono text-[10px] text-gray-850 dark:text-gray-200">{formatPrice(platformFee + packagingCharge)}</span>
+                  <span className="font-mono text-zinc-350">{formatPrice(platformFee + packagingCharge)}</span>
                 </div>
-                <div className="flex justify-between pt-2.5 border-t border-dashed border-black/10 dark:border-white/10 items-center">
-                  <span className="font-black text-gray-900 dark:text-gray-100 uppercase text-[10px] tracking-wider">Total Paid</span>
-                  <span className="font-black text-brand text-sm font-mono">{formatPrice(orderTotal)}</span>
+                <div className="flex justify-between pt-3 border-t border-dashed border-zinc-800 items-center">
+                  <span className="font-black text-zinc-200 uppercase text-[10px] tracking-wider">Total Paid</span>
+                  <span className="font-black text-brand text-base font-mono">{formatPrice(orderTotal)}</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/5 text-center text-[8px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest leading-normal">
+              <div className="mt-5 pt-3 border-t border-zinc-900 text-center text-[9px] text-zinc-500 font-bold uppercase tracking-widest leading-normal">
                 Thank you for choosing Crave!
               </div>
             </motion.div>

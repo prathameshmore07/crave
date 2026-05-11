@@ -3,21 +3,25 @@ import { Link } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import DishImage from '../common/DishImage';
+import { getUserJsonItem, setUserItem } from '../../utils/storage';
+import { useAuthStore } from '../../store/authStore';
 
 export default function RestaurantCard({ restaurant }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAnimate, setIsAnimate] = useState(false);
 
+  const user = useAuthStore((state) => state.user);
+
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('fav_restaurants') || '[]');
+    const favorites = getUserJsonItem('fav_restaurants', []);
     setIsFavorite(favorites.includes(restaurant.id));
-  }, [restaurant.id]);
+  }, [restaurant.id, user]);
 
   const toggleFavorite = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const favorites = JSON.parse(localStorage.getItem('fav_restaurants') || '[]');
+    const favorites = getUserJsonItem('fav_restaurants', []);
     let newFavs = [...favorites];
     
     if (isFavorite) {
@@ -28,7 +32,7 @@ export default function RestaurantCard({ restaurant }) {
       toast.success(`Added ${restaurant.name} to Favourites`);
     }
 
-    localStorage.setItem('fav_restaurants', JSON.stringify(newFavs));
+    setUserItem('fav_restaurants', newFavs);
     setIsFavorite(!isFavorite);
     
     // Trigger spring scale animation

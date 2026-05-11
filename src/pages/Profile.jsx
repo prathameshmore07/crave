@@ -14,9 +14,35 @@ import DishImage from '../components/common/DishImage';
 import { 
   User, MapPin, Heart, ClipboardList, HelpCircle, Save, LogOut, 
   ChevronDown, ChevronUp, Star, MessageSquare, PhoneCall,
-  Award, ShieldCheck, Sun, Moon, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2
+  Award, ShieldCheck, Sun, Moon, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const DonutIcon = ({ className, size = 20 }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path 
+      d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 11.5 21.95 11 21.85 10.5C21.1 10.9 20.1 11 19.5 10.5C18.5 9.7 18.8 8.2 19.8 7.5C19.3 6 18.3 4.7 17 3.8C16 4.8 14.5 5 13.5 4C13 3.5 13.1 2.5 13.5 1.85C13 1.75 12.5 1.7 12 1.7V2ZM12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8Z" 
+      fill="#F43F5E"
+    />
+    <path 
+      d="M12 3.5C7.306 3.5 3.5 7.306 3.5 12C3.5 16.694 7.306 20.5 12 20.5C16.694 20.5 20.5 16.694 20.5 12C20.5 11.7 20.47 11.4 20.4 11.1C19.7 11.3 18.9 11 18.5 10.5C17.2 9.4 17.6 7.4 19 6.5C18.4 5.2 17.4 4.1 16.2 3.3C15.2 4.3 13.5 4.5 12.5 3.5C12.3 3.3 12.1 3.1 12 3V3.5ZM12 9C13.657 9 15 10.343 15 12C15 13.657 13.657 15 12 15C10.343 15 9 13.657 9 12C9 10.343 10.343 9 12 9Z" 
+      fill="#FDA4AF"
+    />
+    <rect x="6" y="11" width="2" height="0.8" rx="0.4" transform="rotate(30 6 11)" fill="#FFF" />
+    <rect x="10" y="5" width="2" height="0.8" rx="0.4" transform="rotate(-45 10 5)" fill="#FFF" />
+    <rect x="15" y="15" width="2" height="0.8" rx="0.4" transform="rotate(15 15 15)" fill="#FFF" />
+    <rect x="7" y="16" width="2" height="0.8" rx="0.4" transform="rotate(-15 7 16)" fill="#FFF" />
+    <rect x="14" y="9" width="2" height="0.8" rx="0.4" transform="rotate(60 14 9)" fill="#FFF" />
+  </svg>
+);
+
 
 const faqs = [
   { q: "How do I cancel my food delivery order?", a: "You can cancel your order within 60 seconds of placing it by reaching out to our support chat. Post confirmation, cancellations are not permitted." },
@@ -107,7 +133,8 @@ export default function Profile() {
     }
   });
 
-  // Re-sync values if store updates
+  // Re-sync values if store updates using primitive dependencies to prevent infinite render loops
+  const userFieldsKey = user ? `${user.name}-${user.email}-${user.phone}` : '';
   useEffect(() => {
     if (user) {
       reset({
@@ -116,7 +143,7 @@ export default function Profile() {
         phone: user.phone
       });
     }
-  }, [user, reset]);
+  }, [userFieldsKey, reset]);
 
   // Sync tab from query parameters
   useEffect(() => {
@@ -125,6 +152,8 @@ export default function Profile() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  if (!user) return null;
 
   const onProfileSubmit = async (data) => {
     setSaving(true);
@@ -148,84 +177,125 @@ export default function Profile() {
     { id: 'faq', label: 'FAQ & Help', icon: HelpCircle, desc: 'Instant support resolutions' }
   ];
 
-  // Loyalty Details
+  // Realistic Account Details
   const memberName = user?.name || "Rahul Sharma";
   const userInitials = getInitials(memberName);
   const avatarGradient = getAvatarColor(memberName);
   const joinedDate = "Member since Jan 2024";
-  const totalOrders = user?.orderHistory?.length || 14;
-  const loyaltyPoints = 450;
-  const nextTierPoints = 500;
-  const pointsProgress = (loyaltyPoints / nextTierPoints) * 100;
+  
+  // Dynamic stats counting
+  const ordersCount = user?.orderHistory?.length || 0;
+  const reviewsCount = customReviews?.length || 0;
+  const savedPlacesCount = user?.addresses?.length || 0;
+  const favoritesCount = user?.favorites?.length || 0;
+
+  // Account Setup Verification list
+  const setupSteps = [
+    { label: "Verify Email & Phone", done: !!user?.email && !!user?.phone },
+    { label: "Add Delivery Address", done: savedPlacesCount > 0 },
+    { label: "Configure Security Lock", done: true },
+    { label: "Add Profile Picture", done: true }
+  ];
+  const completedSteps = setupSteps.filter(s => s.done).length;
+  const setupProgress = Math.round((completedSteps / setupSteps.length) * 100);
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 pb-24 space-y-10 page-enter select-none">
       
       {/* 1. Profile Premium Hero Header */}
-      <div className="bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-900 rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+      <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-100 dark:border-zinc-900 rounded-[28px] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center gap-8 relative overflow-hidden text-left">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         
         {/* User Card Presentation */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left z-10">
-          {/* Glowing Avatar Initials Sphere */}
-          <div className="relative">
-            <div className={`w-24 h-24 rounded-3xl bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-3xl font-black tracking-wider shadow-md border-4 border-white dark:border-zinc-950 animate-in fade-in zoom-in-50 duration-500`} id="dynamic-avatar-profile">
-              {userInitials}
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left z-10 flex-1 w-full">
+          {/* Avatar Sphere with clean inline indicator */}
+          <div className="relative shrink-0">
+            <div className={`w-24 h-24 rounded-[22px] bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-3xl font-extrabold tracking-wide shadow-md border border-white/20 dark:border-zinc-800 animate-in fade-in zoom-in-50 duration-500`} id="dynamic-avatar-profile">
+              <DonutIcon size={48} className="animate-pulse" />
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-amber-500 text-zinc-950 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full border-2 border-white dark:border-zinc-950 flex items-center gap-0.5 shadow-sm">
-              <Award size={10} className="fill-zinc-950" /> Elite
-            </div>
+            {/* Subtle Active indicator dot */}
+            <span className="absolute top-2 right-2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950 shadow-sm animate-pulse" />
           </div>
-
-          <div className="space-y-2 mt-1">
+ 
+          <div className="space-y-3 mt-1 flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none">{memberName}</h1>
-              <span className="inline-flex self-center sm:self-start bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg">
-                Gourmet Gold Member
+              <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none truncate">{memberName}</h1>
+              <span className="inline-flex self-center sm:self-start bg-brand/10 text-brand text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg">
+                Active Member
               </span>
             </div>
             
-            <p className="text-[13px] text-zinc-400 dark:text-zinc-500 font-medium">
-              {joinedDate} • {user?.email || "rahul@gmail.com"}
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 font-bold tracking-tight">
+              {joinedDate} • {user?.email || "rahul@gmail.com"} • {user?.phone || "No phone connected"}
             </p>
-
+ 
             {/* Quick Micro-stats inside Hero */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-1.5">
-              <div className="bg-white dark:bg-zinc-950/60 border border-zinc-100 dark:border-zinc-800/40 px-3 py-1.5 rounded-xl text-center">
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Total Orders</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-200">{totalOrders}</span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-1">
+              {/* Stat 1: Orders */}
+              <div 
+                onClick={() => setActiveTab('orders')}
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+              >
+                <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Orders Placed</span>
+                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{ordersCount}</span>
               </div>
-              <div className="bg-white dark:bg-zinc-950/60 border border-zinc-100 dark:border-zinc-800/40 px-3 py-1.5 rounded-xl text-center">
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Loyalty Balance</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-200">{loyaltyPoints} Pts</span>
+              
+              {/* Stat 2: Reviews */}
+              <div 
+                onClick={() => setActiveTab('reviews')}
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+              >
+                <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">My Reviews</span>
+                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{reviewsCount}</span>
               </div>
-              <div className="bg-white dark:bg-zinc-950/60 border border-zinc-100 dark:border-zinc-800/40 px-3 py-1.5 rounded-xl text-center">
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Est. Savings</span>
-                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">₹1,250</span>
+
+              {/* Stat 3: Saved addresses */}
+              <div 
+                onClick={() => setActiveTab('addresses')}
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+              >
+                <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Saved Places</span>
+                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{savedPlacesCount}</span>
+              </div>
+
+              {/* Stat 4: Favorites */}
+              <div 
+                onClick={() => setActiveTab('favorites')}
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+              >
+                <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Favourites</span>
+                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{favoritesCount}</span>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Loyalty Progression Tier Widget */}
-        <div className="w-full md:w-72 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 p-5 rounded-2xl space-y-3 z-10 self-stretch flex flex-col justify-between shadow-xs">
+ 
+        {/* Realistic Setup Completion Status Widget */}
+        <div className="w-full lg:w-80 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 p-5 rounded-[22px] space-y-3 z-10 self-stretch flex flex-col justify-between shadow-xs">
           <div className="flex justify-between items-center text-xs">
-            <span className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-              <Sparkles size={14} className="text-amber-500" /> Platinum Progress
+            <span className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-emerald-500" /> Account Setup
             </span>
-            <span className="font-black text-zinc-900 dark:text-zinc-100">{loyaltyPoints}/{nextTierPoints} Pts</span>
+            <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{setupProgress}% Done</span>
           </div>
-
-          <div className="w-full h-2.5 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden relative border border-zinc-100 dark:border-zinc-950">
+ 
+          <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden border border-zinc-100 dark:border-zinc-950/40">
             <div 
-              className="h-full bg-gradient-to-r from-amber-400 via-rose-500 to-red-600 rounded-full transition-all duration-1000 ease-out" 
-              style={{ width: `${pointsProgress}%` }}
+              className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out" 
+              style={{ width: `${setupProgress}%` }}
             />
           </div>
-
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium leading-normal">
-            Earn <span className="font-bold text-zinc-800 dark:text-zinc-300">50 more points</span> to automatically unlock Gourmet Platinum VIP and receive free deliveries across all tier partners!
-          </p>
+ 
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
+            {setupSteps.map((step) => (
+              <div key={step.label} className="flex items-center gap-1">
+                <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${step.done ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
+                  <Check size={9} strokeWidth={3} />
+                </span>
+                <span className="text-[9px] font-semibold text-zinc-500 truncate">{step.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -480,7 +550,7 @@ export default function Profile() {
                       <select
                         value={reviewSort}
                         onChange={(e) => setReviewSort(e.target.value)}
-                        className="h-8 px-2.5 text-xs font-black bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/40 dark:border-zinc-800 rounded-lg outline-none text-zinc-800 dark:text-zinc-250 cursor-pointer"
+                        className="h-8 px-2.5 text-xs font-black bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/40 dark:border-zinc-800 rounded-lg outline-none text-zinc-800 dark:text-zinc-300 cursor-pointer"
                       >
                         <option value="newest">🗓️ Newest First</option>
                         <option value="highest">⭐ Highest Rated</option>
@@ -503,7 +573,7 @@ export default function Profile() {
                     </div>
                     <button
                       onClick={() => setActiveTab('orders')}
-                      className="h-9 px-4 bg-zinc-900 hover:bg-zinc-850 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-lg border-none outline-none cursor-pointer"
+                      className="h-9 px-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-lg border-none outline-none cursor-pointer"
                     >
                       Review Past Orders
                     </button>
@@ -624,7 +694,7 @@ export default function Profile() {
                 {editingReview && (
                   <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setEditingReview(null)} />
-                    <div className="bg-white dark:bg-dark-surface border border-zinc-100 dark:border-zinc-850 rounded-[24px] max-w-md w-full p-6 shadow-2xl relative z-10 text-left max-h-[85vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-dark-surface border border-zinc-100 dark:border-zinc-800 rounded-[24px] max-w-md w-full p-6 shadow-2xl relative z-10 text-left max-h-[85vh] overflow-y-auto">
                       <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3 mb-4">
                         <div>
                           <span className="text-[9px] bg-brand/10 text-brand px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Review Customizer</span>
@@ -712,7 +782,7 @@ export default function Profile() {
                                         <DishImage src={dishImg} alt={item.name} dishName={item.name} className="w-full h-full object-cover" />
                                       </div>
                                       <div className="text-left min-w-0">
-                                        <h5 className="text-[11px] font-extrabold text-zinc-850 dark:text-zinc-200 leading-tight truncate max-w-[150px]">{item.name}</h5>
+                                        <h5 className="text-[11px] font-extrabold text-zinc-800 dark:text-zinc-200 leading-tight truncate max-w-[150px]">{item.name}</h5>
                                         <span className="text-[9px] text-zinc-400 font-semibold">{item.quantity}x • {formatPrice(item.price)}</span>
                                       </div>
                                     </div>

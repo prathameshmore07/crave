@@ -251,7 +251,7 @@ export default function DishImage({
   }, [src, dishName, category, timeoutMs]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-neutral-150 dark:bg-zinc-850">
+    <div className="relative w-full h-full overflow-hidden bg-neutral-150 dark:bg-zinc-900">
       {/* Isolated Loading Spinner State */}
       {status === "loading" && (
         <div className="absolute inset-0 bg-neutral-200 dark:bg-neutral-800 animate-pulse flex items-center justify-center">

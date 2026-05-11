@@ -8,6 +8,8 @@ import CartItem from './CartItem';
 import CouponInput from './CouponInput';
 import TipSelector from './TipSelector';
 import BillSummary from './BillSummary';
+import SmartComboBuilder from './SmartComboBuilder';
+import CheckoutBillSplitter from '../checkout/CheckoutBillSplitter';
 import { X, ShoppingBag, Plus, ArrowRight } from 'lucide-react';
 import { formatPrice } from '../../utils/formatPrice';
 
@@ -115,6 +117,14 @@ export default function CartDrawer() {
                     className="w-full min-h-[54px] bg-gray-55 dark:bg-dark-bg/30 border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-3 text-xs text-gray-755 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand resize-none font-medium"
                     maxLength={150}
                   />
+                </div>
+
+                {/* Smart Combo Recommendations Tray */}
+                <SmartComboBuilder />
+
+                {/* Collapsible Bill Splitter */}
+                <div className="mt-1 mb-4">
+                  <CheckoutBillSplitter />
                 </div>
 
                 {/* Promo Code widget */}
