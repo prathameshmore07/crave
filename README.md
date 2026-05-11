@@ -1,180 +1,560 @@
 # 🍔 Crave — Premium Food Delivery Experience
 
-A state-of-the-art, production-grade food delivery application built with **React**, **Vite**, and **Zustand**. Crave is engineered to mirror leading food apps like *Swiggy*, *Zomato*, and *Blinkit*, delivering a seamless, high-end user experience, robust state management, and strict validation controls.
+A modern, fully-featured food delivery application built with React and Vite. Browse restaurants, customize orders, and track deliveries in real-time with a seamless, production-ready interface.
 
-> [!IMPORTANT]
-> **Production-Ready & Fully Audited:** This codebase has undergone a comprehensive, feature-by-feature architectural audit verifying that all custom interactive sub-systems, account isolation parameters, and premium checkout pipelines are fully implemented and functional.
-
----
-
-## 📊 Project Audit Status
-
-An exhaustive technical evaluation of all application flows was executed to confirm reliability. You can access the detailed findings in our **[System Audit Report](file:///Users/prathamesh/.gemini/antigravity/brain/b01cbdc8-7902-4601-92b0-4067e293d845/audit_report.md)**.
-
-| Feature Area | Implementation Status | System Files |
-| :--- | :---: | :--- |
-| **Restaurant & Menu Browsing** | ✅ Fully Implemented | [`RestaurantDetail.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/pages/RestaurantDetail.jsx) |
-| **Cart Management & Verification** | ✅ Fully Implemented | [`cartStore.js`](file:///Users/prathamesh/Desktop/food-delivery-website/src/store/cartStore.js) |
-| **Advanced Multi-Step Checkout** | ✅ Fully Implemented | [`Checkout.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/pages/Checkout.jsx) |
-| **Rider Dispatch & Live Tracking** | ✅ Fully Implemented | [`Tracking.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/pages/Tracking.jsx) |
-| **Saved Addresses & Validation** | ✅ Fully Implemented | [`SavedAddresses.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/components/profile/SavedAddresses.jsx) |
-| **Verified Synced Reviews** | ✅ Fully Implemented | [`reviewStore.js`](file:///Users/prathamesh/Desktop/food-delivery-website/src/store/reviewStore.js) |
-| **Account Isolation & Storage** | ✅ Fully Implemented | [`authStore.js`](file:///Users/prathamesh/Desktop/food-delivery-website/src/store/authStore.js) |
+> **Problem Solved:** Providing users with a premium food ordering experience that combines beautiful UI, intelligent cart management, real-time tracking, and verified community reviews.
 
 ---
 
-## 🔥 Startup-Grade Premium Features
+## 📋 Overview
 
-To make Crave truly stand out as an innovative, highly interactive platform, we have engineered three unique, visually addictive features:
+Crave is a comprehensive food delivery platform that simulates a production-grade ordering system. The application focuses on delivering an intuitive user experience with realistic workflows, dynamic menu management, and detailed order tracking.
 
-### 1. 🍔 Smart Combo Builder
-- **Dynamic Upsell Recommendations:** Listens in real-time to items in the user's cart, suggesting clever combo pairings (e.g., matching a burger or pizza with fries, Cokes, and brownies; Biryani with cooling raita and sweets).
-- **One-Tap Upgrade:** Includes an elegant checkmark confirmation and a single-click "Add" button that triggers seamless additions.
-- **Micro-Savings Indicators:** Displays clear, glowing badges showcasing combo discount values (e.g., "Save ₹30!").
-- **System File:** [`SmartComboBuilder.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/components/cart/SmartComboBuilder.jsx) (rendered inside the Cart Drawer).
-
-### 2. 🎴 Food Explorer Mode ("Tinder for Food")
-- **3D Card Deck Physics:** Users swipe through card decks displaying high-quality campus trending items using responsive dragging.
-- **Multi-Gesture Reactions:** Swipe Right/Tap Heart to add to **Cravings** (🤤), Swipe Left/Tap X to **Skip** (❌), or swipe up/click flame for **Trending Super Likes** (🔥).
-- **Floating Emoji Bursts:** Swiping triggers gorgeous, micro-animated vector explosions of craving/skip emojis on a floating canvas.
-- **Dorm Tags:** Highlight items with playful campus tags like *"Hostel Legend"*, *"Exam Fuel"*, *"Midnight Craving"*, and *"Surprisingly Good"*.
-- **System File:** [`FoodExplorer.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/pages/FoodExplorer.jsx) (navigable via headers and bottom mobile bar tabs).
-
-### 👥 3. Shared Group Cart & Splitter Room
-- **Live Room Lobbies:** Create a shared Room (e.g. `CRAVE-AJ92`) or join one with friends.
-- **Teammate typing streams:** Simulates live companion activity, rendering typing dots and feeds (e.g. *"Daksh is choosing..."* followed by *"Daksh added Classic Paneer Roll 🌶️"*).
-- **Dynamic Split Calculations:** Automatically does the math for the group, dividing subtotal, GST (18%), and shared delivery/platform fees based on who ordered what.
-- **Social Dorm Badges:** Bestows humorous dorm tags based on cart behavior:
-  - 💀 **Biggest Spender**
-  - 🍰 **Dessert Addict**
-  - 🌶️ **Spice Warrior**
-  - 👀 **Silent Orderer**
-- **System File:** [`GroupOrder.jsx`](file:///Users/prathamesh/Desktop/food-delivery-website/src/pages/GroupOrder.jsx) (available in header and mobile bottom nav).
+### Why Crave?
+- **Realistic UX:** Built to mirror industry-standard food delivery apps like Zomato and Swiggy
+- **Smart Workflows:** Intelligent cart system prevents accidental restaurant switching
+- **Live Tracking:** Visual progress tracking with simulated delivery stages
+- **Community Trust:** Verified purchase reviews with real user feedback
+- **Smooth Experience:** Premium animations and transitions throughout the app
 
 ---
 
-## ✨ Standard Product Features
+## ✨ Features
 
-### 🏪 Curated Restaurant Discovery
-- **Aesthetic Grid Rendering:** High-fidelity layouts with shimmer skeleton states to ensure premium perceived performance.
-- **Advanced Taxonomy Filters:** Quick-toggle categories (e.g., South Indian, Fast Food, North Indian) and rating/distance constraints.
-- **Dynamic Search Overlay:** Debounced instant matching across menus and kitchens.
+### 🏪 Restaurant Discovery
+- Browse curated restaurants with live ratings and delivery times
+- Filter by cuisine type (South Indian, Chinese, North Indian, Fast Food, etc.)
+- Search overlay for quick restaurant lookup
+- City-based restaurant availability
+- Restaurant detail pages with full menu information
 
-### 🛒 Intelligent Cart Management
-- **Duplicate Prevention:** Intelligently increments item quantities rather than duplicate list creation.
-- **Safe Restaurant Switching:** Prompts users with a modern warning overlay when attempting to add items from a different kitchen.
-- **Real-Time Calculations:** Sub-second recalculation of subtotals, GST (18%), delivery fees, and flat platform charges.
+### 🛒 Smart Cart System
+- **Intelligent Restaurant Switching:** Prompts to replace cart when selecting items from different restaurants
+- **Item Customizations:** Add special instructions and dietary preferences
+- **Real-time Calculations:** Live subtotal, GST, delivery fees, and platform charges
+- **Persistent State:** Cart survives page refreshes via localStorage
+- **Coupon System:** Apply discount codes for instant savings
+- **Tip Selection:** Flexible tipping options for delivery partners
 
-### 👤 Modernized Clean Profile Header
-- **Minimalist Aesthetic:** Replaced flashy, fake luxury tiers ("Gourmet Gold Member") with a realistic, premium Swiggy-like layout.
-- **Dynamic Account Stats:** Accurate user metrics showing exact counts of *Orders Placed*, *My Reviews*, *Saved Places*, and *Favourites*.
-- **Account Setup Progress:** An interactive setup checklist displaying actual verification parameters and profile configuration completion.
+### 📍 Advanced Checkout Flow
+- **Multi-step Process:** Address selection → Payment method → Processing
+- **Saved Addresses:** Store and manage multiple delivery addresses
+- **Payment Options:** Support for multiple payment methods
+- **Order Confirmation:** Detailed bill summary with itemized charges
+- **Error Handling:** Graceful fallbacks and validation
 
-### 🗺️ Premium Address & Delivery Controls
-- **Strict Validations:** Real-time form controls requiring a strict 10-digit numeric mobile number starting with 6-9, a 6-digit postal pincode, and complete floor details.
-- **Custom Location Labels:** Beautiful, micro-animated sliding custom field appearing instantly upon selecting "Other" label types.
-- **Blinkit-Style Delivery Preferences:** Gorgeous, interactive preference cards with smooth border glow states and custom vectors:
-  - 📦 **Leave at Door** (emerald emerald-500 glow)
-  - 🔔 **Ring Doorbell** (indigo indigo-500 glow)
-  - 📞 **Call on Arrival** (blue blue-500 glow)
-- **Rider Presets:** Add pre-defined instruction tags such as *"Avoid calling"* or *"Doorbell not working"* directly to the order object with one click.
+### 🚚 Real-time Order Tracking
+- **5-Stage Progress Tracking:**
+  1. Order placed & kitchen notification
+  2. Chef confirmation & prep starts
+  3. Active cooking & ingredient prep
+  4. Ready for pickup with hot packaging
+  5. Rider in transit on optimized route
+- **Live ETA Timer:** Countdown to estimated delivery
+- **Rider Information:** View delivery partner details and contact
+- **Order Status Map:** Visual progress bar with detailed stage descriptions
 
-### 🚚 Simulated Real-Time Delivery Tracker
-- **5-Stage Live Dispatch Pipeline:** Watch the order transition through realistic stages:
-  1. *Placed & Confirmed* — Kitchen acknowledging order parameters.
-  2. *Preparation Starting* — Fresh ingredients gathering.
-  3. *Active Kitchen Cooking* — Chefs completing menu preparations.
-  4. *Quality Hot Packaging* — Sealing products for travel.
-  5. *Rider in Transit* — Real-time coordinate translation of dispatch.
-- **Interactive Simulation Controls:** Speed-up delivery times to test transitions or trigger custom map progress states.
+### ⭐ Verified Review System
+- **Purchase-Verified Reviews:** Only customers who ordered can review
+- **Rich Media:** Upload dish images with reviews
+- **Edit & Delete:** Modify or remove reviews anytime
+- **Community Ratings:** Aggregate star ratings with distribution
+- **Authentic Feedback:** Verified badges for trustworthy reviews
+- **ITM Canteen Easter Eggs:** Humorous community reviews for on-campus dining
 
-### ⭐ Dual-Synced Review Platform
-- **Verified Purchase Restraints:** Review triggers unlock strictly for completed/delivered orders.
-- **Multi-Level Rating Matrix:** Rate overall food quality, packaging durability, and delivery dispatch speed independently.
-- **Instant Global Synced Feed:** Custom reviews dynamically populate the user’s "My Reviews" tab and are injected instantly into the public, cross-account feedback drawer of the restaurant.
-- **Live Average Recalculations:** Submitting, modifying, or deleting feedback instantly triggers weighted recalculations of restaurant averages, directly affecting grid lists sorting.
+### 👤 User Profile & History
+- **Order History:** Complete list of past orders with details
+- **Reorder Feature:** One-click reordering of favorite meals
+- **Saved Addresses:** Manage delivery address book
+- **Favorite Restaurants:** Bookmark and quick-access loved eateries
+- **Account Settings:** Manage user preferences and login status
+- **Theme Support:** Dark/light mode for comfortable browsing
+
+### 🔍 Search & Filtering
+- **Global Search:** Find restaurants and cuisines instantly
+- **Cuisine Filters:** Browse by food category preferences
+- **Rating Filters:** Find top-rated establishments
+- **Price Filters:** Filter by delivery fees and price ranges
+- **Debounced Search:** Optimized search performance
+
+### 🎨 UI/UX Highlights
+- **Premium Animations:** Smooth transitions and micro-interactions via Framer Motion
+- **Shimmer Effects:** Loading skeletons for excellent perceived performance
+- **Responsive Design:** Mobile-first, works flawlessly on all devices
+- **Dark UI:** Modern dark mode with accessibility in mind
+- **Toast Notifications:** Non-intrusive feedback via Sonner
+- **Intuitive Navigation:** Bottom tab nav for mobile, header for desktop
+
+### 📸 Dynamic Image System
+- **Smart Image Fallbacks:** Categorized food image mapping
+- **Lazy Loading:** Optimized rendering for performance
+- **Unsplash Integration:** High-quality dish photography
+- **Fallback Keywords:** Auto-suggests relevant images if item not found
+- **DishImage Component:** Reusable, intelligent image resolver
+
+### 💳 Payment Flow
+- **Branded Payment Interface:** Cohesive design with company branding
+- **Multiple Methods:** Cards, UPI, wallets, and cash on delivery
+- **Order Processing:** Real-time processing state with animations
+- **Confirmation Tracking:** Immediate redirect to tracking post-purchase
+
+### 📱 Responsive & Accessible
+- **Mobile-First Design:** Optimized for all screen sizes
+- **Touch-Friendly:** Large tap targets and gesture support
+- **Keyboard Navigation:** Full keyboard accessibility
+- **Semantic HTML:** Proper heading hierarchy and ARIA labels
+- **Performance:** Optimized for fast loading and smooth interactions
 
 ---
 
-## 📁 Technical Architecture
+## 🛠 Tech Stack
+
+### Frontend Framework
+- **React 18.3** — Modern UI library with hooks
+- **Vite 5.4** — Lightning-fast build tool and dev server
+
+### State Management
+- **Zustand** — Lightweight, scalable state store
+  - Cart management
+  - Authentication state
+  - UI toggles (modals, drawers)
+  - Order tracking
+  - Reviews
+
+### Styling & Animation
+- **Tailwind CSS** — Utility-first styling framework
+- **Framer Motion** — Production-grade animation library
+- **PostCSS & Autoprefixer** — CSS processing pipeline
+
+### Routing & Forms
+- **React Router 6** — Client-side routing
+- **React Hook Form** — Efficient form state management
+- **Zod** — TypeScript-first schema validation
+
+### UI Components & Icons
+- **Lucide React** — 1000+ beautiful, consistent icons
+- **Sonner** — Toast notifications with superior UX
+
+### Development Tools
+- **ESLint** — Code quality and consistency
+- **React Hooks Linter** — Hook best practices enforcement
+
+### Data Persistence
+- **localStorage** — Client-side data caching
+- **Session State** — Transient UI state management
+
+---
+
+## 📁 Folder Structure
 
 ```
 crave/
+├── public/                    # Static assets
 ├── src/
 │   ├── components/
-│   │   ├── cart/             # Cart UI, Bill Summaries, Smart Combo, Coupons
-│   │   ├── checkout/         # Address steps, Secure payment screens, Processors
-│   │   ├── restaurant/       # Menu lists, category drawers, customizable plates
-│   │   ├── tracking/         # Real-time timers, rider cards, simulation meters
-│   │   ├── profile/          # Order lists, address books, favorites
-│   │   └── common/           # Header, Dynamic SVG Dish images, skeletons, drawers
-│   ├── pages/                # Route controllers (Home, Lists, Details, Tracker, Explorer, Group)
-│   ├── store/                # Zustand global state (Auth, Cart, Orders, Reviews)
-│   └── utils/                # Sanitization helpers, price/time formatting
+│   │   ├── cart/             # Cart UI and interactions
+│   │   │   ├── CartDrawer.jsx
+│   │   │   ├── CartItem.jsx
+│   │   │   ├── FloatingCart.jsx
+│   │   │   ├── BillSummary.jsx
+│   │   │   ├── CouponInput.jsx
+│   │   │   ├── TipSelector.jsx
+│   │   │   └── ReplaceCartModal.jsx
+│   │   ├── checkout/         # Checkout flow components
+│   │   │   ├── AddressStep.jsx
+│   │   │   ├── PaymentStep.jsx
+│   │   │   └── ProcessingStep.jsx
+│   │   ├── restaurant/       # Restaurant & menu components
+│   │   │   ├── RestaurantCard.jsx
+│   │   │   ├── MenuItem.jsx
+│   │   │   ├── CustomizeModal.jsx
+│   │   │   └── ReviewCard.jsx
+│   │   ├── tracking/         # Order tracking components
+│   │   │   ├── ProgressBar.jsx
+│   │   │   ├── ETATimer.jsx
+│   │   │   └── RiderCard.jsx
+│   │   ├── profile/          # User profile components
+│   │   │   ├── OrderHistory.jsx
+│   │   │   ├── SavedAddresses.jsx
+│   │   │   └── FavRestaurants.jsx
+│   │   ├── search/           # Search functionality
+│   │   │   └── SearchOverlay.jsx
+│   │   ├── home/             # Homepage components
+│   │   │   ├── HeroBanner.jsx
+│   │   │   ├── CuisineTiles.jsx
+│   │   │   └── OfferStrip.jsx
+│   │   └── common/           # Shared components
+│   │       ├── Header.jsx
+│   │       ├── BottomNav.jsx
+│   │       ├── Footer.jsx
+│   │       ├── CityModal.jsx
+│   │       ├── DishImage.jsx
+│   │       ├── Skeleton.jsx
+│   │       ├── EmptyState.jsx
+│   │       ├── ErrorState.jsx
+│   │       ├── NotificationDrawer.jsx
+│   │       └── SupportDrawer.jsx
+│   ├── pages/                # Route pages
+│   │   ├── Home.jsx
+│   │   ├── RestaurantList.jsx
+│   │   ├── RestaurantDetail.jsx
+│   │   ├── Checkout.jsx
+│   │   ├── Tracking.jsx
+│   │   ├── Profile.jsx
+│   │   ├── Auth.jsx
+│   │   └── NotFound.jsx
+│   ├── hooks/                # Custom React hooks
+│   │   ├── useDebounce.js
+│   │   ├── useLocalStorage.js
+│   │   └── useScrollPosition.js
+│   ├── store/                # Zustand state stores
+│   │   ├── cartStore.js
+│   │   ├── authStore.js
+│   │   ├── cityStore.js
+│   │   ├── orderStore.js
+│   │   ├── reviewStore.js
+│   │   ├── notificationStore.js
+│   │   └── uiStore.js
+│   ├── utils/                # Utility functions
+│   │   ├── formatPrice.js
+│   │   ├── formatTime.js
+│   │   ├── getRatingColor.js
+│   │   └── getSpiceLabel.js
+│   ├── data/                 # Mock data & constants
+│   │   ├── restaurants.js
+│   │   ├── cities.js
+│   │   ├── offers.js
+│   │   ├── reviews.js
+│   │   └── riders.js
+│   ├── services/             # API integration layer
+│   │   └── api.js
+│   ├── assets/               # Images, logos, etc.
+│   ├── App.jsx
+│   ├── main.jsx
+│   ├── App.css
+│   └── index.css
+├── package.json
+├── vite.config.js
+├── tailwind.config.js
+├── postcss.config.js
+├── eslint.config.js
+└── README.md
 ```
 
-### State Isolation & Storage Paradigm
-Crave implements strict data segregation to guarantee multi-account privacy and prevent session leaks:
-- Active accounts use unique email keys as identifiers.
-- On login or registration, the application triggers localized store rehydration (`loadForUser`), retrieving only data scoped to that specific account.
-- Switching profiles or logging out completely purges in-memory stores and localStorage active slots, guaranteeing a fresh, isolated state with `0` past actions for new signups.
-
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- npm / yarn / pnpm
+- Node.js 16+ and npm/yarn/pnpm
 
-### Installation & Execution
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/prathameshmore07/crave.git
-   cd crave
-   ```
+### Installation
 
-2. **Install all dependencies:**
-   ```bash
-   npm install
-   ```
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/crave.git
+cd crave
+```
 
-3. **Start the Vite local development server:**
-   ```bash
-   npm run dev
-   ```
-   The app will run locally at: `http://localhost:5173`
+2. **Install dependencies**
+```bash
+npm install
+```
 
-4. **Verify and bundle for production:**
-   ```bash
-   npm run build
-   ```
+3. **Start development server**
+```bash
+npm run dev
+```
+The app will be available at `http://localhost:5173`
+
+4. **Build for production**
+```bash
+npm run build
+```
+
+5. **Preview production build**
+```bash
+npm run preview
+```
+
+### Linting
+```bash
+npm run lint
+```
 
 ---
 
-## 🛠️ Package Registry
+## 📦 Key Dependencies
 
-*   **UI Core:** React 18.3 & Vite 5.4
-*   **State Engines:** Zustand 4.5
-*   **Routing Pipeline:** React Router Dom 6
-*   **Styling Engine:** Tailwind CSS 3
-*   **Micro-interactions:** Framer Motion 11
-*   **Input Mechanics:** React Hook Form 7
-*   **Icon Vectors:** Lucide React 1
-*   **Interactive Toasts:** Sonner 2
+| Package | Version | Purpose |
+|---------|---------|---------|
+| React | 18.3.1 | UI framework |
+| Vite | 5.4.10 | Build tool |
+| Zustand | 4.5.7 | State management |
+| React Router | 6.30.3 | Client routing |
+| Tailwind CSS | 3.4.19 | Styling |
+| Framer Motion | 11.18.2 | Animations |
+| React Hook Form | 7.75.0 | Form handling |
+| Zod | 4.4.3 | Schema validation |
+| Lucide React | 1.14.0 | Icon library |
+| Sonner | 2.0.7 | Notifications |
+
+---
+
+## 🎯 Performance Optimizations
+
+### Component Optimization
+- **Memoization:** React.memo prevents unnecessary re-renders
+- **Zustand Selectors:** Granular state subscriptions minimize re-renders
+- **Code Splitting:** Route-based lazy loading (via React Router)
+
+### Rendering Performance
+- **Shimmer Skeletons:** Loading states feel faster than they are
+- **Image Lazy Loading:** DishImage component uses native lazy loading
+- **Debounced Search:** Prevents excessive re-renders during typing
+
+### Data Caching
+- **localStorage Persistence:** Cart, auth, addresses cached locally
+- **Memoized Selectors:** Zustand prevents redundant calculations
+- **Reusable Components:** MenuItems, ReviewCards fully composable
+
+### Build Optimization
+- **Vite Optimizations:** Pre-bundling, code splitting, tree-shaking
+- **Tailwind Purge:** Only shipped CSS for used utilities
+- **Image Optimization:** Unsplash URLs with compression params
+
+---
+
+## 🔄 Order Flow
+
+### Cart Logic
+1. User browses restaurants and adds items
+2. System detects restaurant switch and shows interceptor modal
+3. User confirms to replace cart or cancel
+4. Items accumulate in cart with customizations
+5. Cart persists across sessions
+
+### Checkout Flow
+1. **Step 1 - Address:** Select or add delivery address
+2. **Step 2 - Payment:** Choose payment method
+3. **Step 3 - Processing:** Real-time order confirmation
+4. System generates order ID and rider assignment
+5. User redirected to tracking page
+
+### Tracking Flow
+1. Order placed → Kitchen notification stage
+2. Chef confirms → Preparation starts
+3. Active cooking → Ingredients being prepped
+4. Ready for pickup → Hot packaging complete
+5. Rider in transit → Live delivery tracking
+6. Post-delivery → Review prompt shown
+
+### Review System
+1. User can only review after delivery completes
+2. Select star rating (1-5 stars)
+3. Upload dish image (optional)
+4. Add detailed comment
+5. Submit for community visibility
+6. Edit/delete own reviews anytime
+
+---
+
+## 🖼 Image System
+
+### Dynamic Image Resolution
+The app implements an intelligent image system with multiple fallback layers:
+
+```
+Priority 1: Static mapping (menuItemImages)
+Priority 2: Item name pattern matching (e.g., "dosa" → dosa image)
+Priority 3: Category-based fallback (cuisine type)
+Priority 4: Generic food placeholder
+```
+
+### Benefits
+- **No Broken Images:** Always displays relevant imagery
+- **Performance:** Lazy loading with Unsplash compression
+- **Customization:** Easy to add static images per restaurant
+- **Recovery:** Automatic fallback if primary source fails
+
+---
+
+## ⭐ Reviews & Rating System
+
+### Features
+- **Verified Purchases:** Only users with completed orders can review
+- **Rich Content:** Support for star ratings, text, and images
+- **Community Moderation:** Edit/delete your own reviews
+- **Rating Distribution:** Aggregate stats (1⭐ through 5⭐)
+- **Authentic Feedback:** Real user voices shape restaurant reputation
+
+### Review Editing
+Users can modify reviews even after submission, allowing for corrections or updated feedback based on subsequent visits.
+
+---
+
+## 🎨 UI/UX Principles
+
+### Design System
+- **Color Palette:** Modern dark UI with brand accent colors
+- **Typography:** Clear hierarchy with readable font sizes
+- **Spacing:** Consistent padding and margins via Tailwind utilities
+- **Icons:** Lucide React for consistent 24px icons
+
+### Animations
+- **Page Transitions:** Smooth route changes
+- **Modal Animations:** Entrance and exit animations
+- **Loading States:** Shimmer effects and skeleton screens
+- **Interactions:** Hover states and tap feedback
+
+### Accessibility
+- **Keyboard Navigation:** Full keyboard support
+- **Color Contrast:** WCAG AA compliant
+- **Semantic HTML:** Proper heading structure
+- **ARIA Labels:** Screen reader support where needed
+
+---
+
+## 🚀 Deployment
+
+### Environment Setup
+Create a `.env.local` file (not committed):
+```bash
+VITE_API_BASE_URL=https://api.example.com
+VITE_MAPS_API_KEY=your_maps_api_key
+```
+
+### Deployment Options
+- **Vercel:** Zero-config deployment
+- **Netlify:** Git-based CI/CD
+- **GitHub Pages:** Static hosting
+- **AWS S3 + CloudFront:** Scalable CDN
+
+### Build Output
+```bash
+npm run build
+# Output in dist/ directory, ready for deployment
+```
+
+---
+
+## 🐛 Known Challenges & Solutions
+
+### Challenge 1: Image Mapping
+- **Issue:** Different restaurants use different dish names for similar items
+- **Solution:** Multi-layer fallback with keyword matching and category defaults
+
+### Challenge 2: Cart Synchronization
+- **Issue:** Preventing accidental mixing of orders from different restaurants
+- **Solution:** Interceptor modal with clear UX for switching
+
+### Challenge 3: Review State Management
+- **Issue:** Managing edit/delete states across sessions
+- **Solution:** Zustand store with localStorage persistence
+
+### Challenge 4: Real-time Tracking
+- **Issue:** Simulating realistic delivery progression
+- **Solution:** Time-based stage transitions with visual feedback
+
+### Challenge 5: Payment Flow Consistency
+- **Issue:** Maintaining state across checkout steps
+- **Solution:** Zustand store with validation at each step
+
+---
+
+## 🔮 Future Enhancements
+
+### Backend Integration
+- [ ] Real backend API integration
+- [ ] Database for persistent order storage
+- [ ] Authentication with JWT tokens
+- [ ] Real payment gateway (Stripe, Razorpay)
+
+### Advanced Features
+- [ ] Live maps with delivery partner tracking
+- [ ] Push notifications for order updates
+- [ ] AI-powered recommendations
+- [ ] Loyalty program & rewards
+- [ ] Subscription/meal plans
+
+### Platform Expansion
+- [ ] Delivery partner mobile app
+- [ ] Restaurant admin dashboard
+- [ ] Analytics and reporting
+- [ ] Multi-language support
+- [ ] Voice ordering
+
+### Performance
+- [ ] Service Worker for offline support
+- [ ] Optimized image serving
+- [ ] GraphQL API optimization
+- [ ] Progressive Web App (PWA)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+   ```bash
+   git clone https://github.com/prathameshmore07/crave.git
+   ```
+
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+
+3. **Commit your changes**
+   ```bash
+   git commit -m "Add amazing feature"
+   ```
+
+4. **Push to your fork**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+
+5. **Open a Pull Request**
+   - Provide clear description of changes
+   - Include screenshots for UI changes
+   - Reference any related issues
+
+### Code Style
+- Follow ESLint configuration
+- Use Prettier for formatting
+- Write descriptive commit messages
+- Test on mobile devices
+
+### Before Submitting PR
+- Run `npm run lint`
+- Test all user flows
+- Check mobile responsiveness
+- Verify console for errors
 
 ---
 
 ## 📝 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT License - feel free to use this project for personal or commercial purposes.
 
 ---
 
 ## 👤 Author
 
 **Prathamesh More**
+
 - GitHub: [@prathameshmore07](https://github.com/prathameshmore07)
+
+---
+
+## 🙏 Acknowledgments
+
+- Inspired by industry-leading delivery platforms
+- UI/UX best practices from Zomato, Swiggy, DoorDash
+- Community feedback and contributions
+- Open source libraries that power this app
 
 ---
 
