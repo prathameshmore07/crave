@@ -2,7 +2,7 @@ import React from 'react';
 import { Phone, MessageSquare, Star, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function RiderCard({ rider, currentStageIdx = 0 }) {
+export default function RiderCard({ rider, currentStageIdx = 0, onCall, onMessage }) {
   if (!rider) return null;
 
   // Dynamically map tracking stage to active rider coordinates status
@@ -62,14 +62,14 @@ export default function RiderCard({ rider, currentStageIdx = 0 }) {
       {/* Contact Trigger actions */}
       <div className="flex items-center gap-2 sm:self-center self-end">
         <button 
-          onClick={() => toast.success(`Calling ${rider.name}... Please keep your line clear.`)}
+          onClick={onCall}
           className="p-2.5 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-dark-surface hover:border-brand hover:text-brand text-gray-600 dark:text-gray-300 transition-all cursor-pointer focus:outline-none"
           aria-label="Call Rider"
         >
           <Phone size={14} />
         </button>
         <button 
-          onClick={() => toast.info(`Initializing secure chat tunnel with ${rider.name}...`)}
+          onClick={onMessage}
           className="p-2.5 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-dark-surface hover:border-brand hover:text-brand text-gray-600 dark:text-gray-300 transition-all cursor-pointer focus:outline-none"
           aria-label="Message Rider"
         >

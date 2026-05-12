@@ -34,6 +34,7 @@ export default function RestaurantCard({ restaurant }) {
 
     setUserItem('fav_restaurants', newFavs);
     setIsFavorite(!isFavorite);
+    window.dispatchEvent(new Event('wishlist-updated'));
     
     // Trigger spring scale animation
     setIsAnimate(true);

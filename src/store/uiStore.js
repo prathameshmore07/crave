@@ -1,41 +1,28 @@
 import { create } from 'zustand';
 
-export const useUiStore = create((set) => {
-  // Initialize dark mode from localStorage or media query
-  const storedTheme = localStorage.getItem('theme');
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = storedTheme ? storedTheme === 'dark' : systemDark;
+// Dark mode only — no light theme toggle; Tailwind `dark:` variants always apply via `dark` on <html>
+const applyDarkOnly = () => {
+  document.documentElement.classList.add('dark');
+  localStorage.setItem('theme', 'dark');
+};
 
-  if (isDark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
+applyDarkOnly();
 
-  return {
-    theme: isDark ? 'dark' : 'light',
-    cartOpen: false,
-    searchOpen: false,
-    filterDrawerOpen: false,
-    supportOpen: false,
-    supportType: 'chat', // 'chat' | 'helpline'
-    notificationsOpen: false,
+export const useUiStore = create((set) => ({
+  theme: 'dark',
+  cartOpen: false,
+  searchOpen: false,
+  filterDrawerOpen: false,
+  supportOpen: false,
+  supportType: 'chat',
+  notificationsOpen: false,
 
-    toggleTheme: () => set((state) => {
-      const nextTheme = state.theme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('theme', nextTheme);
-      if (nextTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return { theme: nextTheme };
-    }),
+  /** @deprecated Light mode removed; kept as no-op for any stray callers */
+  toggleTheme: () => {},
 
-    setCartOpen: (open) => set({ cartOpen: open }),
-    setSearchOpen: (open) => set({ searchOpen: open }),
-    setFilterDrawerOpen: (open) => set({ filterDrawerOpen: open }),
-    setSupportOpen: (open, type = 'chat') => set({ supportOpen: open, supportType: type }),
-    setNotificationsOpen: (open) => set({ notificationsOpen: open })
-  };
-});
+  setCartOpen: (open) => set({ cartOpen: open }),
+  setSearchOpen: (open) => set({ searchOpen: open }),
+  setFilterDrawerOpen: (open) => set({ filterDrawerOpen: open }),
+  setSupportOpen: (open, type = 'chat') => set({ supportOpen: open, supportType: type }),
+  setNotificationsOpen: (open) => set({ notificationsOpen: open }),
+}));

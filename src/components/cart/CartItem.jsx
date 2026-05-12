@@ -21,6 +21,7 @@ export default function CartItem({ item }) {
       if (!favorites.some(fav => fav.id === i.id)) {
         favorites.push(i);
         setUserItem('saved_for_later', favorites);
+        window.dispatchEvent(new Event('wishlist-updated'));
       }
       // Remove from cart
       removeItem(i.id, i.selectedCustomizations);
@@ -50,11 +51,12 @@ export default function CartItem({ item }) {
       className="flex items-start py-4 border-b border-black/[0.04] dark:border-white/[0.04] gap-3.5"
     >
       {/* Food Image Thumbnail */}
-      <div className="w-[52px] h-[52px] rounded-xl overflow-hidden border border-black/[0.04] dark:border-white/[0.04] bg-gray-50 dark:bg-neutral-850 flex-shrink-0 relative">
+      <div className="w-[52px] h-[52px] rounded-xl overflow-hidden border border-black/[0.04] dark:border-white/[0.04] bg-gray-50 dark:bg-neutral-850 flex-shrink-0 relative animate-fade-in">
         <DishImage 
-          src={item.imageUrl} 
+          src={item.imageUrl || item.image} 
           alt={item.name} 
           dishName={item.name}
+          category={item.category}
           className="w-full h-full object-cover"
         />
       </div>

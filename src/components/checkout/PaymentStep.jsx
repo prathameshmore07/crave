@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, Wallet, Smartphone, Landmark, DollarSign, ArrowRight, ShieldCheck, Check } from 'lucide-react';
 import { formatPrice } from '../../utils/formatPrice';
 import { useCartStore } from '../../store/cartStore';
+import { toast } from 'sonner';
 
 const paymentMethods = [
   { id: 'gpay', name: 'Google Pay', icon: Smartphone, subtitle: 'Pay instantly from bank account' },
@@ -16,23 +17,57 @@ export default function PaymentStep({ activeMethodId, onSelectMethod, onConfirm 
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const getCartTotals = useCartStore((state) => state.getCartTotals);
 
   const { finalTotal } = getCartTotals();
 
   const handleConfirmSubmit = (e) => {
     e.preventDefault();
-    if (!activeMethodId) return;
-    onConfirm({
-      method: activeMethodId,
-      details: activeMethodId === 'upi' ? { vpa } : activeMethodId === 'card' ? { cardNumber } : {}
-    });
+    if (!activeMethodId || isProcessing) return;
+    
+    setIsProcessing(true);
+    const toastId = toast.loading("Processing order & verifying payment gateway...", { position: "top-center" });
+
+    setTimeout(() => {
+      toast.success("Payment authorized successfully! Creating your order...", { id: toastId, position: "top-center" });
+      onConfirm({
+        method: activeMethodId,
+        details: activeMethodId === 'upi' ? { vpa } : activeMethodId === 'card' ? { cardNumber, cardHolder } : {}
+      });
+    }, 1500);
   };
 
   const isFormValid = () => {
     if (!activeMethodId) return false;
-    if (activeMethodId === 'upi' && !vpa.includes('@')) return false;
-    if (activeMethodId === 'card' && (cardNumber.length < 16 || cardExpiry.length < 5 || cardCvv.length < 3)) return false;
+    
+    // For UPI
+    if (activeMethodId === 'upi') {
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+      return upiRegex.test(vpa);
+    }
+    
+    // For Card
+    if (activeMethodId === 'card') {
+      const cleanCard = cardNumber.replace(/\s+/g, '');
+      if (cleanCard.length !== 16 || !/^\d+$/.test(cleanCard)) return false;
+      
+      // Card Expiry validation (MM/YY)
+      if (cardExpiry.length !== 5) return false;
+      const [month, year] = cardExpiry.split('/');
+      if (!month || !year || month.length !== 2 || year.length !== 2) return false;
+      const monthNum = parseInt(month, 10);
+      if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) return false;
+      
+      // CVV validation
+      if (cardCvv.length !== 3 || !/^\d+$/.test(cardCvv)) return false;
+      
+      // Cardholder validation
+      if (!cardHolder.trim() || !/^[a-zA-Z\s]+$/.test(cardHolder)) return false;
+    }
+    
+    // For GPay, PhonePe, COD
     return true;
   };
 
@@ -101,27 +136,63 @@ export default function PaymentStep({ activeMethodId, onSelectMethod, onConfirm 
             )}
 
             {activeMethodId === 'upi' && (
-              <div className="space-y-3 animate-scale-up">
+              <div className="space-y-3 animate-scale-up text-left">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Enter UPI ID</label>
-                  <input
-                    type="text"
-                    value={vpa}
-                    onChange={(e) => setVpa(e.target.value)}
-                    placeholder="e.g. name@okhdfcbank"
-                    className="h-10 px-3 w-full border border-gray-200 dark:border-gray-750 bg-white dark:bg-dark-bg text-xs font-semibold rounded-lg outline-none focus:border-brand"
-                  />
-                  {!vpa.includes('@') && vpa.length > 0 && (
-                    <span className="text-[9px] font-bold text-brand block">UPI ID must contain '@' symbol</span>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400">Enter UPI ID</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={vpa}
+                      onChange={(e) => setVpa(e.target.value.trim())}
+                      placeholder="e.g. name@okhdfcbank"
+                      className={`h-10 pl-3 pr-10 w-full border bg-white dark:bg-dark-bg text-xs font-semibold rounded-lg outline-none transition-colors ${
+                        vpa.length === 0
+                          ? 'border-gray-200 dark:border-gray-750 focus:border-brand'
+                          : /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(vpa)
+                            ? 'border-emerald-500 focus:border-emerald-500'
+                            : 'border-rose-500 focus:border-rose-500'
+                      }`}
+                    />
+                    {vpa.length > 0 && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(vpa) ? (
+                          <Check size={14} className="text-emerald-500 stroke-[3]" />
+                        ) : (
+                          <span className="text-[10px] font-black text-rose-500">!</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {vpa.length > 0 && !/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(vpa) && (
+                    <span className="text-[9px] font-bold text-rose-500 block animate-fade-in">
+                      {!vpa.includes('@') 
+                        ? "UPI ID must contain '@' symbol" 
+                        : "Invalid format. Use name@bank format (e.g. user@okaxis)"}
+                    </span>
                   )}
                 </div>
               </div>
             )}
 
             {activeMethodId === 'card' && (
-              <div className="space-y-3 animate-scale-up">
+              <div className="space-y-3 animate-scale-up text-left">
+                {/* Cardholder name input */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Card Number</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400">Cardholder Name</label>
+                  <input
+                    type="text"
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                    placeholder="e.g. PRATHAMESH MORE"
+                    className="h-10 px-3 w-full border border-gray-200 dark:border-gray-750 bg-white dark:bg-dark-bg text-xs font-semibold rounded-lg outline-none focus:border-brand"
+                  />
+                  {cardHolder.length > 0 && !/^[a-zA-Z\s]+$/.test(cardHolder) && (
+                    <span className="text-[9px] font-bold text-rose-500 block">Letters and spaces only</span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400">Card Number</label>
                   <input
                     type="text"
                     maxLength="16"
@@ -130,21 +201,31 @@ export default function PaymentStep({ activeMethodId, onSelectMethod, onConfirm 
                     placeholder="1234 5678 9012 3456"
                     className="h-10 px-3 w-full border border-gray-200 dark:border-gray-750 bg-white dark:bg-dark-bg text-xs font-semibold rounded-lg outline-none focus:border-brand"
                   />
+                  {cardNumber.length > 0 && cardNumber.length < 16 && (
+                    <span className="text-[9px] font-bold text-rose-500 block">Must be exactly 16 digits</span>
+                  )}
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Expiry (MM/YY)</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400">Expiry (MM/YY)</label>
                     <input
                       type="text"
                       maxLength="5"
                       value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/[^\d/]/g, '');
+                        if (val.length === 2 && !val.includes('/') && e.nativeEvent.inputType !== 'deleteContentBackward') {
+                          val += '/';
+                        }
+                        setCardExpiry(val);
+                      }}
                       placeholder="MM/YY"
                       className="h-10 px-3 w-full border border-gray-200 dark:border-gray-750 bg-white dark:bg-dark-bg text-xs font-semibold rounded-lg outline-none focus:border-brand"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">CVV</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-550 dark:text-zinc-400">CVV</label>
                     <input
                       type="password"
                       maxLength="3"
@@ -157,7 +238,6 @@ export default function PaymentStep({ activeMethodId, onSelectMethod, onConfirm 
                 </div>
               </div>
             )}
-
             {activeMethodId === 'cod' && (
               <div className="space-y-2 animate-scale-up text-center py-6">
                 <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-success bg-success/5 border border-success/10 p-3 rounded-lg">
@@ -177,16 +257,23 @@ export default function PaymentStep({ activeMethodId, onSelectMethod, onConfirm 
               <button
                 type="button"
                 onClick={handleConfirmSubmit}
-                disabled={!isFormValid()}
+                disabled={!isFormValid() || isProcessing}
                 className={`h-11 w-full flex items-center justify-between px-5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-sm ${
-                  isFormValid() 
+                  isFormValid() && !isProcessing
                     ? 'bg-brand hover:bg-brand-hover text-white cursor-pointer' 
                     : 'bg-gray-150 dark:bg-neutral-800 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                <span>Pay {formatPrice(finalTotal)}</span>
+                {isProcessing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Processing Order...
+                  </span>
+                ) : (
+                  <span>Pay {formatPrice(finalTotal)}</span>
+                )}
                 <span className="flex items-center gap-0.5">
-                  Confirm Order
+                  {isProcessing ? "Verifying..." : "Confirm Order"}
                   <ArrowRight size={14} />
                 </span>
               </button>

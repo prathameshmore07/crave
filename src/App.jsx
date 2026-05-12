@@ -20,6 +20,7 @@ import Tracking from './pages/Tracking';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 import FoodExplorer from './pages/FoodExplorer';
+import Wishlist from './pages/Wishlist';
 import Membership from './pages/Membership';
 import MembershipCheckout from './pages/MembershipCheckout';
 import MembershipSuccess from './pages/MembershipSuccess';
@@ -78,7 +79,7 @@ export default function App() {
   }, [showSplash, selectedCity, setCity]);
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-white dark:bg-dark-bg text-gray-800 dark:text-gray-200 flex flex-col transition-colors duration-200">
         
         {/* Splash screen overlay */}
@@ -145,6 +146,11 @@ export default function App() {
                 <Tracking />
               </PrivateRoute>
             } />
+            <Route path="/tracking/:id" element={
+              <PrivateRoute>
+                <Tracking />
+              </PrivateRoute>
+            } />
             <Route path="/profile" element={
               <PrivateRoute>
                 <Profile />
@@ -153,6 +159,11 @@ export default function App() {
             <Route path="/explorer" element={
               <PrivateRoute>
                 <FoodExplorer />
+              </PrivateRoute>
+            } />
+            <Route path="/wishlist" element={
+              <PrivateRoute>
+                <Wishlist />
               </PrivateRoute>
             } />
 

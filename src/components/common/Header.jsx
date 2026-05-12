@@ -5,7 +5,7 @@ import { useUiStore } from '../../store/uiStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
-import { ChevronDown, Search, Sun, Moon, ShoppingBag, Bell, Compass, Heart, User, Crown } from 'lucide-react';
+import { ChevronDown, Search, ShoppingBag, Bell, Compass, Heart, User, Crown } from 'lucide-react';
 import { cities } from '../../data/cities';
 import { motion } from 'framer-motion';
 import logo from '../../assets/logo.png';
@@ -39,8 +39,6 @@ export default function Header({ onOpenCityModal }) {
   const selectedCity = useCityStore((state) => state.selectedCity);
   const selectedLocality = useCityStore((state) => state.selectedLocality);
   
-  const theme = useUiStore((state) => state.theme);
-  const toggleTheme = useUiStore((state) => state.toggleTheme);
   const setSearchOpen = useUiStore((state) => state.setSearchOpen);
   const setCartOpen = useUiStore((state) => state.setCartOpen);
   const setNotificationsOpen = useUiStore((state) => state.setNotificationsOpen);
@@ -165,15 +163,6 @@ export default function Header({ onOpenCityModal }) {
               {isMembershipActive ? 'Active' : 'Crave PRO'}
             </span>
           </Link>
-
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.04] text-[--text-primary] focus:outline-none"
-            aria-label="Toggle Theme"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
 
           {/* Wishlist */}
           <Link

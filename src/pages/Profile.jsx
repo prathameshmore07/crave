@@ -15,7 +15,7 @@ import DishImage from '../components/common/DishImage';
 import { 
   User, MapPin, Heart, ClipboardList, HelpCircle, Save, LogOut, 
   ChevronDown, ChevronUp, Star, MessageSquare, PhoneCall,
-  Award, ShieldCheck, Sun, Moon, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2, Check, Crown
+  Award, ShieldCheck, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2, Check, Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import useMembershipStore from '../store/membershipStore';
@@ -100,8 +100,6 @@ export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const logout = useAuthStore((state) => state.logout);
-  const theme = useUiStore((state) => state.theme);
-  const toggleTheme = useUiStore((state) => state.toggleTheme);
   const setSupportOpen = useUiStore((state) => state.setSupportOpen);
 
   // Subscribed selectors for custom reviews and order history reactive updates

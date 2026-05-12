@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProgressBar from '../components/tracking/ProgressBar';
 import RiderCard from '../components/tracking/RiderCard';
 import ETATimer from '../components/tracking/ETATimer';
@@ -13,6 +14,7 @@ import { riders } from '../data/riders';
 
 // use shared brand assets across payment flow
 import logo from '../assets/logo.png';
+import ReviewModal from '../components/common/ReviewModal';
 import { 
   CheckCircle2, 
   PhoneCall, 
@@ -29,7 +31,8 @@ import {
   Clock, 
   Check,
   Trash2,
-  MessageSquare
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '../utils/formatPrice';
@@ -57,16 +60,17 @@ export default function Tracking() {
 
   // States
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const [isEditingReview, setIsEditingReview] = useState(false);
   
-  // Rating states
-  const [foodRating, setFoodRating] = useState(5);
-  const [deliveryRating, setDeliveryRating] = useState(5);
-  const [packagingRating, setPackagingRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [dishRatings, setDishRatings] = useState({});
+  // Rider communications states
+  // Rider chat states
+  const [isRiderMessaging, setIsRiderMessaging] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessageText, setNewMessageText] = useState("");
+  const [isRiderTyping, setIsRiderTyping] = useState(false);
+
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  // reviewMode: 'new' | 'view' | 'edit' — controls ReviewModal state
+  const [reviewMode, setReviewMode] = useState('new');
 
   // Refs to prevent duplicate toast notifications
   const notifiedStages = useRef({});
@@ -82,6 +86,59 @@ export default function Tracking() {
       document.body.style.overflow = '';
     };
   }, [isRatingModalOpen]);
+
+
+  // Initialize chat when messaging opens
+  useEffect(() => {
+    if (isRiderMessaging && chatMessages.length === 0) {
+      setChatMessages([
+        {
+          id: 'm-1',
+          sender: 'rider',
+          text: `Hi there! I have securely loaded your hot meal package and I am speeding down the shortest route to your block. Do you need any condiments or specific gate drop-off instructions?`,
+          timestamp: new Date(Date.now() - 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    }
+  }, [isRiderMessaging, chatMessages.length]);
+
+
+  const handleSendChatMessage = (text) => {
+    if (!text.trim()) return;
+    const userMsg = {
+      id: `m-${Date.now()}`,
+      sender: 'user',
+      text: text.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setChatMessages(prev => [...prev, userMsg]);
+    setNewMessageText("");
+
+    setIsRiderTyping(true);
+    
+    // Choose contextual automated response
+    let riderReplyText = "Understood! I'm on it. See you in a few minutes.";
+    const lower = text.toLowerCase();
+    if (lower.includes("leave") || lower.includes("gate")) {
+      riderReplyText = "Sure, I'll drop the package off at the security gate and snap a picture! 👍";
+    } else if (lower.includes("outside") || lower.includes("here")) {
+      riderReplyText = "Excellent! I'm rounding the corner now. See you in 1 minute.";
+    } else if (lower.includes("call")) {
+      riderReplyText = "Got it! I will call your number the second I arrive at your building block.";
+    } else if (lower.includes("fast") || lower.includes("hurry")) {
+      riderReplyText = "Understood! Driving safely but quickly. Navigating the campus now.";
+    }
+
+    setTimeout(() => {
+      setIsRiderTyping(false);
+      setChatMessages(prev => [...prev, {
+        id: `m-${Date.now() + 1}`,
+        sender: 'rider',
+        text: riderReplyText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }, 1500);
+  };
 
   // Match the route order ID or fallback to activeOrder / latest_order
   let orderToShow = activeOrder;
@@ -106,6 +163,15 @@ export default function Tracking() {
     if (!orderToShow) return;
 
     const updateStageAndNotifications = () => {
+      // Force Delivered status stage directly if order is set as Delivered
+      if (orderToShow.orderStatus === "Delivered") {
+        setCurrentStageIdx(7);
+        if (trackingStageIdx !== 7) {
+          setTrackingStageIdx(7);
+        }
+        return;
+      }
+
       // Calculate elapsed seconds since order timestamp
       const elapsed = Math.floor((Date.now() - new Date(orderToShow.timestamp).getTime()) / 1000);
       
@@ -147,37 +213,37 @@ export default function Tracking() {
   const triggerToastNotification = (stage) => {
     switch (stage) {
       case 1:
-        toast.success("🍳 Restaurant accepted your order!", {
+        toast.success("Restaurant accepted your order", {
           description: "Our kitchen partner has approved your culinary instructions."
         });
         break;
       case 2:
-        toast.info("🍜 Food preparation started!", {
+        toast.info("Food preparation started", {
           description: "Fresh ingredients are being sliced and sizzled on the grill."
         });
         break;
       case 3:
-        toast.success("🛍️ Your meal is cooked & packed!", {
+        toast.success("Your meal is cooked & packed", {
           description: "A secure thermal seal has been applied. Ready for courier pick up."
         });
         break;
       case 4:
-        toast.info("🚴 Courier partner picked up your parcel!", {
+        toast.info("Courier partner picked up your parcel", {
           description: `${orderToShow?.riderInfo?.name || "Rider"} is securing your hot package.`
         });
         break;
       case 5:
-        toast.success("⚡ Courier is on the way!", {
+        toast.success("Courier is on the way", {
           description: "Your delivery hero is riding down the quickest route."
         });
         break;
       case 6:
-        toast.warning("🏠 Order is arriving soon!", {
+        toast.warning("Order is arriving soon", {
           description: "Your delivery hero is just a few meters away. Keep your phone handy!"
         });
         break;
       case 7:
-        toast.success("🎉 Order delivered successfully!", {
+        toast.success("Order delivered successfully", {
           description: "Thank you for choosing Crave! Enjoy your warm meal."
         });
         break;
@@ -212,85 +278,7 @@ export default function Tracking() {
     setCartOpen(true);
   };
 
-  const submitReviewFeedback = (e) => {
-    e.preventDefault();
-    
-    // // prevent empty review submission
-    if (!reviewComment.trim()) {
-      toast.error("Please enter a short comment.");
-      return;
-    }
-
-    const emojiReaction = foodRating >= 5 ? "🥰" : foodRating >= 4 ? "🙂" : foodRating >= 3 ? "😐" : foodRating >= 2 ? "🙁" : "😠";
-
-    const ratingObj = {
-      food: foodRating,
-      foodQuality: foodRating,
-      deliveryExperience: deliveryRating,
-      packaging: packagingRating,
-      comment: reviewComment,
-      emoji: emojiReaction,
-      timestamp: Date.now(),
-      dishRatings: dishRatings
-    };
-
-    // // save review for delivered order
-    rateOrder(orderToShow.orderId, ratingObj);
-
-    const activeUser = useAuthStore.getState().user;
-    const authorName = activeUser ? activeUser.name : "You (Student Verified)";
-
-    useReviewStore.getState().submitReview(orderToShow.restaurantId, {
-      id: `review-${orderToShow.orderId}`,
-      userName: authorName,
-      avatar: authorName.substring(0, 2).toUpperCase(),
-      rating: foodRating,
-      foodQuality: foodRating,
-      deliveryExperience: deliveryRating,
-      packaging: packagingRating,
-      text: reviewComment,
-      emoji: emojiReaction,
-      orderId: orderToShow.orderId,
-      date: "Just now",
-      items: orderToShow.items || [],
-      dishRatings: dishRatings
-    });
-
-    setIsRatingModalOpen(false);
-    setIsEditingReview(false);
-    toast.success("Review submitted successfully", {
-      description: "Your detailed review is live on the restaurant reviews section!"
-    });
-
-    // Reset review form states
-    setReviewComment("");
-    setUploadedImage(null);
-  };
-
-  // enable edit/delete review for verified orders
-  const handleStartEdit = () => {
-    if (orderToShow.rating) {
-      setFoodRating(orderToShow.rating.foodQuality || orderToShow.rating.food || 5);
-      setDeliveryRating(orderToShow.rating.deliveryExperience || orderToShow.rating.food || 5);
-      setPackagingRating(orderToShow.rating.packaging || orderToShow.rating.food || 5);
-      setReviewComment(orderToShow.rating.comment || "");
-      setDishRatings(orderToShow.rating.dishRatings || {});
-    }
-    setIsEditingReview(true);
-  };
-
-  const handleDeleteTrackingReview = () => {
-    rateOrder(orderToShow.orderId, null);
-    useReviewStore.getState().deleteReview(orderToShow.restaurantId, orderToShow.orderId);
-    setIsRatingModalOpen(false);
-    setIsEditingReview(false);
-    toast.success("Review deleted successfully");
-  };
-
-  const handleMockImageUpload = () => {
-    setUploadedImage("https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&auto=format&fit=crop&q=80");
-    toast.info("Photo loaded successfully! (Demonstration mock photo attached)");
-  };
+  // review handlers are now managed by the unified ReviewModal component
 
   // Custom UI Skeletons & Suggestions for EMPTY STATE
   if (!orderToShow) {
@@ -449,20 +437,42 @@ export default function Tracking() {
                 </p>
                 
                 {/* Post Delivery Action Row */}
-                <div className="flex items-center gap-3 pt-1 flex-wrap">
-                  <button
-                    onClick={() => {
-                      setIsEditingReview(false);
-                      setIsRatingModalOpen(true);
-                    }}
-                    className="h-10 px-4 bg-brand text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-hover shadow-md shadow-brand/10 transition-all focus:outline-none flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Star size={12} className="fill-current" />
-                    {orderToShow.rating ? "Edit / View Review" : "Rate Order"}
-                  </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1.5 border-t border-emerald-500/10 mt-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {orderToShow.rating ? (
+                        <>
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                          <Check size={11} strokeWidth={3} />
+                          Review Submitted
+                        </span>
+                        <button
+                          onClick={() => {
+                            setReviewMode('view');
+                            setIsRatingModalOpen(true);
+                          }}
+                          className="h-10 px-4 bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xs transition-colors cursor-pointer border-none outline-none flex items-center gap-1.5"
+                        >
+                          <MessageSquare size={12} />
+                          View Review
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setReviewMode('new');
+                          setIsRatingModalOpen(true);
+                        }}
+                        className="h-10 px-4 bg-brand hover:bg-brand-hover text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-md shadow-brand/10 transition-all focus:outline-none flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Star size={12} className="fill-current" />
+                        Rate Order
+                      </button>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => handleOneClickReorder(orderToShow)}
-                    className="h-10 px-4 border border-brand/20 text-brand text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-brand/5 transition-all focus:outline-none"
+                    className="h-10 px-4 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-brand hover:text-brand text-[11px] font-black uppercase tracking-widest rounded-xl transition-all focus:outline-none cursor-pointer"
                   >
                     Order Again
                   </button>
@@ -473,11 +483,24 @@ export default function Tracking() {
             {/* 8-stage progress indicator */}
             <ProgressBar currentStageIdx={currentStageIdx} />
 
-            {/* Delivery Partner Details (assigned starting at Stage 4: Picked Up) */}
-            {currentStageIdx >= 4 && assignedRider && (
+            {/* Delivery Partner Details (assigned starting at Stage 1: Confirmed) */}
+            {currentStageIdx >= 1 && assignedRider && (
               <div className="space-y-3 pt-2 border-t border-black/[0.04] dark:border-white/[0.04] animate-scale-up">
                 <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Courier Partner Details</h3>
-                <RiderCard rider={assignedRider} currentStageIdx={currentStageIdx} />
+                <RiderCard 
+                  rider={assignedRider} 
+                  currentStageIdx={currentStageIdx} 
+                  onCall={() => {
+                    // Open native phone dialer instead of in-app VOIP simulation
+                    const riderPhone = assignedRider?.phone || '+919876543210';
+                    window.open(`tel:${riderPhone}`, '_self');
+                    toast.success(`Calling ${assignedRider?.name || 'Rider'}...`, {
+                      description: 'Opening your phone\'s dialer app.',
+                      duration: 2000
+                    });
+                  }}
+                  onMessage={() => setIsRiderMessaging(true)}
+                />
               </div>
             )}
 
@@ -485,14 +508,14 @@ export default function Tracking() {
             <div className="pt-4 border-t border-black/[0.05] dark:border-white/[0.05] flex gap-3 flex-wrap">
               <button 
                 onClick={() => setSupportOpen(true, 'chat')}
-                className="flex-1 min-w-[130px] h-10 px-4 border border-black/[0.08] dark:border-white/[0.08] bg-gray-50/40 dark:bg-neutral-850/40 hover:border-brand hover:text-brand text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer"
+                className="flex-1 min-w-[130px] h-10 px-4 border border-brand/30 bg-brand/5 hover:bg-brand hover:text-white text-brand rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer"
               >
                 <HelpCircle size={13} />
                 24/7 Chat Support
               </button>
               <button 
                 onClick={() => setSupportOpen(true, 'helpline')}
-                className="flex-1 min-w-[130px] h-10 px-4 border border-black/[0.08] dark:border-white/[0.08] bg-gray-50/40 dark:bg-neutral-850/40 hover:border-brand hover:text-brand text-gray-600 dark:text-gray-300 rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer"
+                className="flex-1 min-w-[130px] h-10 px-4 border border-brand/30 bg-brand/5 hover:bg-brand hover:text-white text-brand rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all outline-none cursor-pointer"
               >
                 <PhoneCall size={12} />
                 Support Helpline
@@ -640,227 +663,172 @@ export default function Tracking() {
         </div>
       </div>
 
-      {/* POST-DELIVERY REVIEW OVERLAY MODAL */}
-      {isRatingModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 w-full h-full min-h-screen">
-          {/* Modal Backdrop Scrim - covers entire page with blur and prevents interaction */}
+      {/* POST-DELIVERY REVIEW — unified review component */}
+      <ReviewModal
+        isOpen={isRatingModalOpen}
+        onClose={() => { setIsRatingModalOpen(false); setReviewMode('new'); }}
+        order={orderToShow}
+        mode={reviewMode}
+        onSubmit={(ratingData) => {
+          // save review to order store
+          rateOrder(orderToShow.orderId, ratingData);
+
+          // save to review store
+          const activeUser = useAuthStore.getState().user;
+          const authorName = activeUser ? activeUser.name : "You";
+          useReviewStore.getState().submitReview(orderToShow.restaurantId, {
+            id: `review-${orderToShow.orderId}`,
+            userName: authorName,
+            avatar: authorName.substring(0, 2).toUpperCase(),
+            rating: ratingData.foodQuality,
+            foodQuality: ratingData.foodQuality,
+            deliveryExperience: ratingData.deliveryExperience,
+            packaging: ratingData.packaging,
+            text: ratingData.comment,
+            emoji: ratingData.emoji,
+            orderId: orderToShow.orderId,
+            date: ratingData.isEdited ? "Edited just now" : "Just now",
+            items: orderToShow.items || [],
+            dishRatings: ratingData.dishRatings,
+          });
+
+          setIsRatingModalOpen(false);
+          setReviewMode('new');
+          toast.success(ratingData.isEdited ? "Review updated!" : "Review submitted!", {
+            description: "Your feedback is live on the restaurant page."
+          });
+        }}
+        onEdit={() => setReviewMode('edit')}
+        onDelete={() => {
+          rateOrder(orderToShow.orderId, null);
+          useReviewStore.getState().deleteReview(orderToShow.restaurantId, orderToShow.orderId);
+          setIsRatingModalOpen(false);
+          setReviewMode('new');
+          toast.success("Review deleted successfully");
+        }}
+      />
+
+      {/* Rider Call — now handled via native tel: link, no in-app overlay needed */}
+
+      {/* 2. Rider Chat Drawer Modal */}
+      <AnimatePresence>
+        {isRiderMessaging && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setIsRatingModalOpen(false)}
-            className="fixed inset-0 bg-black/65 backdrop-blur-sm w-full h-full min-h-screen z-[9998]"
-          />
-          
-          {/* Modal Body */}
-          <div className="bg-white dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] w-full max-w-md rounded-3xl p-6 space-y-4 shadow-2xl relative z-[9999] animate-scale-up text-left max-h-[calc(100vh-2rem)] md:max-h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
-            
-            {/* Close trigger button */}
-            <button 
-              onClick={() => setIsRatingModalOpen(false)}
-              className="absolute right-5 top-5 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer z-20"
+            className="fixed inset-0 z-[3000] bg-black/60 backdrop-blur-xs flex justify-end"
+          >
+            {/* Overlay click close handler */}
+            <div className="absolute inset-0" onClick={() => setIsRiderMessaging(false)} />
+
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 26, stiffness: 220 }}
+              className="relative w-full max-w-md bg-white dark:bg-neutral-950 h-full shadow-2xl flex flex-col border-l border-black/[0.04] dark:border-white/[0.04] z-10"
             >
-              <X size={16} />
-            </button>
-
-            <div className="text-center space-y-1 flex-shrink-0">
-              <span className="text-[10px] font-black text-brand uppercase tracking-widest">Order Review</span>
-              <h3 className="text-base font-black text-gray-850 dark:text-gray-100">Rate your experience</h3>
-              <p className="text-[10px] text-gray-400 font-semibold">Help us refine deliveries from {orderToShow.restaurantName}</p>
-            </div>
-
-            {/* allow modal content scrolling */}
-            {orderToShow.rating && !isEditingReview ? (
-              // Saved rating review readout
-              <div className="p-4 border border-black/[0.04] dark:border-white/[0.04] bg-gray-50 dark:bg-dark-surface/50 rounded-2xl space-y-4 text-xs font-semibold overflow-y-auto flex-1 max-h-[60vh] md:max-h-[70vh] pr-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Food Quality</span>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={13} className={i < orderToShow.rating.food ? "fill-amber-500 text-amber-500" : "text-gray-200"} />
-                    ))}
+              {/* Chat Header */}
+              <div className="p-4 border-b border-black/[0.05] dark:border-white/[0.05] flex items-center justify-between bg-neutral-50 dark:bg-neutral-900/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/20 text-brand font-extrabold flex items-center justify-center text-xs relative">
+                    {assignedRider?.imageInitials || "RH"}
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-neutral-950 rounded-full animate-pulse" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-gray-850 dark:text-gray-100">{assignedRider?.name || "Delivery Hero"}</h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Courier Partner • Online</p>
                   </div>
                 </div>
-                <div className="flex justify-between items-center border-t border-black/[0.03] pt-2">
-                  <span className="text-gray-400">Rider Service</span>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={13} className={i < orderToShow.rating.deliveryExperience ? "fill-amber-500 text-amber-500" : "text-gray-200"} />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-between items-center border-t border-black/[0.03] pt-2">
-                  <span className="text-gray-400">Packaging Integrity</span>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={13} className={i < orderToShow.rating.packaging ? "fill-amber-500 text-amber-500" : "text-gray-200"} />
-                    ))}
-                  </div>
-                </div>
-                {orderToShow.rating.comment && (
-                  <div className="border-t border-black/[0.03] pt-3 text-gray-600 dark:text-gray-300">
-                    <span className="text-gray-400 block text-[10px] uppercase tracking-wider mb-1">Your Comment</span>
-                    "{orderToShow.rating.comment}"
-                  </div>
-                )}
-                {orderToShow.rating.imageUrl && (
-                  <div className="border-t border-black/[0.03] pt-2">
-                    <span className="text-gray-400 block text-[10px] uppercase tracking-wider mb-2">Attached Photo</span>
-                    <img src={orderToShow.rating.imageUrl} alt="Uploaded Review" className="w-14 h-14 object-cover rounded-lg border border-black/[0.06]" />
-                  </div>
-                )}
-
-                {/* Actions: Edit or Delete Review */}
-                <div className="flex gap-2 border-t border-black/[0.03] pt-3.5 mt-1">
-                  {/* enable edit/delete review for verified orders */}
-                  <button
-                    type="button"
-                    onClick={handleStartEdit}
-                    className="h-9 flex-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer border-none outline-none"
-                  >
-                    <MessageSquare size={12} />
-                    Edit Review
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDeleteTrackingReview}
-                    className="h-9 px-3 border border-red-500/20 hover:border-red-500 bg-red-500/5 hover:bg-red-500 text-red-500 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer border-none outline-none"
-                  >
-                    <Trash2 size={12} />
-                    Delete
-                  </button>
-                </div>
+                <button
+                  onClick={() => setIsRiderMessaging(false)}
+                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-500 dark:text-neutral-400 flex items-center justify-center cursor-pointer transition-colors outline-none focus:outline-none"
+                >
+                  <X size={15} />
+                </button>
               </div>
-            ) : (
-              // Interactive rating review submission form
-              <form onSubmit={submitReviewFeedback} className="space-y-4 overflow-y-auto flex-1 pr-1 max-h-[60vh] md:max-h-[70vh]">
-                
-                {/* 1. Food Rating stars */}
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-gray-600 dark:text-gray-300">Food Quality</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((stars) => (
-                      <button
-                        type="button"
-                        key={stars}
-                        onClick={() => setFoodRating(stars)}
-                        className="text-amber-500 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
-                      >
-                        <Star size={18} className={stars <= foodRating ? "fill-current" : "stroke-current text-gray-200 dark:text-gray-700"} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* 2. Rider service rating */}
-                <div className="flex items-center justify-between text-xs font-bold border-t border-black/[0.03] pt-2.5">
-                  <span className="text-gray-600 dark:text-gray-300">Delivery Service</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((stars) => (
-                      <button
-                        type="button"
-                        key={stars}
-                        onClick={() => setDeliveryRating(stars)}
-                        className="text-amber-500 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
-                      >
-                        <Star size={18} className={stars <= deliveryRating ? "fill-current" : "stroke-current text-gray-200 dark:text-gray-700"} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              {/* Chat Bubbles Scroll Container */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatMessages.map(msg => {
+                  const isMe = msg.sender === 'user';
+                  return (
+                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-scale-up`}>
+                      <div className={`max-w-[80%] rounded-2xl p-3.5 space-y-1 text-left ${
+                        isMe 
+                          ? 'bg-brand text-white rounded-tr-none' 
+                          : 'bg-neutral-100 dark:bg-neutral-900 text-gray-800 dark:text-gray-100 rounded-tl-none'
+                      }`}>
+                        <p className="text-xs font-semibold leading-relaxed">{msg.text}</p>
+                        <span className={`text-[8px] font-bold block text-right ${isMe ? 'text-white/60' : 'text-neutral-400'}`}>
+                          {msg.timestamp}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
 
-                {/* 3. Eco-Packaging rating */}
-                <div className="flex items-center justify-between text-xs font-bold border-t border-black/[0.03] pt-2.5">
-                  <span className="text-gray-600 dark:text-gray-300">Packaging Integrity</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((stars) => (
-                      <button
-                        type="button"
-                        key={stars}
-                        onClick={() => setPackagingRating(stars)}
-                        className="text-amber-500 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
-                      >
-                        <Star size={18} className={stars <= packagingRating ? "fill-current" : "stroke-current text-gray-200 dark:text-gray-700"} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3.5. Individual Dish Ratings */}
-                {orderToShow.items && orderToShow.items.length > 0 && (
-                  <div className="space-y-2.5 py-3 px-4 bg-zinc-550/5 dark:bg-zinc-900/40 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] border-t">
-                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-extrabold uppercase tracking-widest block">Rate Individual Dishes:</span>
-                    <div className="space-y-2">
-                      {orderToShow.items.map((item) => {
-                        const dRating = dishRatings[item.id] || 5;
-                        return (
-                          <div key={item.id} className="flex items-center justify-between gap-3 bg-white dark:bg-dark-surface p-2 rounded-xl border border-black/[0.02] dark:border-white/[0.02]">
-                            <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{item.name}</span>
-                            <div className="flex items-center gap-0.5">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  type="button"
-                                  key={star}
-                                  onClick={() => {
-                                    setDishRatings(prev => ({ ...prev, [item.id]: star }));
-                                  }}
-                                  className="focus:outline-none hover:scale-110 transition-transform bg-transparent border-none p-0 cursor-pointer"
-                                >
-                                  <Star
-                                    size={13}
-                                    className={star <= dRating ? "fill-amber-400 text-amber-400" : "text-gray-200 dark:text-neutral-800"}
-                                  />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
+                {/* Simulated typing indicator bubble */}
+                {isRiderTyping && (
+                  <div className="flex justify-start animate-fade-in">
+                    <div className="bg-neutral-100 dark:bg-neutral-900 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-none p-3.5 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* 4. Text Review comment */}
-                <div className="space-y-1 pt-2 border-t border-black/[0.03]">
-                  <label htmlFor="reviewText" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Share your culinary thoughts</label>
-                  <textarea
-                    id="reviewText"
-                    rows={3}
-                    placeholder="Tell us about the spice, flavor profile, and delivery speed..."
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    className="w-full text-xs p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-transparent focus:border-brand focus:ring-1 focus:ring-brand outline-none resize-none"
-                    required
-                  />
-                </div>
-
-
-
-                {/* Submission CTA */}
-                <div className="pt-3 flex gap-2">
-                  {isEditingReview && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingReview(false)}
-                      className="h-11 px-4 border border-black/[0.08] dark:border-white/[0.08] text-gray-500 dark:text-gray-400 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-55 dark:hover:bg-neutral-800 transition-all focus:outline-none cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  )}
+              {/* Quick Reply Chips */}
+              <div className="p-3 border-t border-black/[0.03] dark:border-white/[0.03] bg-neutral-50/40 dark:bg-neutral-900/10 flex flex-wrap gap-2">
+                {[
+                  "Please leave it at the gate",
+                  "I am outside",
+                  "Call me when you arrive",
+                  "Please bring it fast, thanks!"
+                ].map(chipText => (
                   <button
-                    type="submit"
-                    className="h-11 flex-1 bg-brand text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-brand-hover shadow-md shadow-brand/10 transition-all focus:outline-none cursor-pointer"
+                    key={chipText}
+                    type="button"
+                    onClick={() => handleSendChatMessage(chipText)}
+                    disabled={isRiderTyping}
+                    className="px-3 py-1.5 text-[10px] font-bold bg-white dark:bg-neutral-900 border border-black/[0.06] dark:border-white/[0.06] rounded-full hover:border-brand hover:text-brand text-gray-600 dark:text-gray-350 transition-all cursor-pointer focus:outline-none"
                   >
-                    {isEditingReview ? "Save Changes" : "Submit Premium Review"}
+                    {chipText}
                   </button>
-                </div>
+                ))}
+              </div>
 
+              {/* Chat Input form */}
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendChatMessage(newMessageText);
+                }}
+                className="p-4 border-t border-black/[0.05] dark:border-white/[0.05] flex gap-2"
+              >
+                <input
+                  type="text"
+                  placeholder="Type secure message..."
+                  value={newMessageText}
+                  onChange={(e) => setNewMessageText(e.target.value)}
+                  disabled={isRiderTyping}
+                  className="flex-1 h-10 bg-neutral-50 dark:bg-neutral-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl px-4 text-xs font-bold text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-brand placeholder-gray-400 disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessageText.trim() || isRiderTyping}
+                  className="w-10 h-10 bg-brand hover:bg-brand-hover disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-all cursor-pointer focus:outline-none shrink-0"
+                >
+                  <Send size={14} />
+                </button>
               </form>
-            )}
-
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

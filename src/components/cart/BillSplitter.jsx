@@ -1,36 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, UserPlus, Trash2, Check, Sparkles, DollarSign, Calculator, ChevronRight, X, Info } from 'lucide-react';
+import { Users, Plus, ChevronRight, X, Printer, Download, Eye, Share2, Info } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { formatPrice } from '../../utils/formatPrice';
 import { toast } from 'sonner';
+import { getAvatarInitials, getAvatarGradient } from '../checkout/CheckoutBillSplitter';
 
 export default function BillSplitter({ onClose }) {
-  const { items: cartItems, getSubtotal } = useCartStore();
+  const { items: cartItems, getCartTotals, restaurant } = useCartStore();
 
   // Active Splits Mode: 'equal' | 'item'
   const [splitMode, setSplitMode] = useState('equal');
   
-  // List of active friends to split with
+  // List of active friends to split with - seeded with You dynamically
   const [friends, setFriends] = useState([
-    { id: 'f-1', name: 'Prathamesh', avatar: '🔥' },
-    { id: 'f-2', name: 'Daksh', avatar: '👨‍💻' }
+    { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
   ]);
   const [newFriendName, setNewFriendName] = useState('');
 
   // Item assignment mapping: { [cartItemId]: friendId }
   const [assignments, setAssignments] = useState({});
 
-  // Subtotal, taxes and calculations
-  const subtotal = getSubtotal();
-  const gst = subtotal * 0.18; // 18% GST
-  const deliveryFee = subtotal > 0 ? 40 : 0;
-  const platformFee = subtotal > 0 ? 10 : 0;
-  const grandTotal = subtotal + gst + deliveryFee + platformFee;
+  // Glassmorphic Share Card states
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+
+  // Sync calculations with the global cart totals
+  const { subtotal, discount, packagingCharge, deliveryFee, platformFee, gst, finalTotal } = getCartTotals();
 
   // Auto assign items when cart or friends list change
   useEffect(() => {
-    // Default assignment: assign all items to the first friend if not already assigned
     if (friends.length > 0) {
       const updatedAssignments = { ...assignments };
       cartItems.forEach(item => {
@@ -46,36 +45,35 @@ export default function BillSplitter({ onClose }) {
     e.preventDefault();
     if (!newFriendName.trim()) return;
     
-    // Limits max friends to keep UI exceptionally clean
     if (friends.length >= 6) {
       toast.warning("Maximum of 6 split buddies reached!", { position: "top-center" });
       return;
     }
 
-    const avatars = ['👨‍💻', '🧑‍🚀', '👩‍🎨', '🦁', '🦉', '🦊', '🦄', '🐝'];
-    const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
-
+    const name = newFriendName.trim();
     const newFriend = {
       id: `f-${Date.now()}`,
-      name: newFriendName.trim(),
-      avatar: randomAvatar
+      name: name,
+      avatarGradient: getAvatarGradient(name),
+      initials: getAvatarInitials(name)
     };
 
     setFriends([...friends, newFriend]);
     setNewFriendName('');
-    toast.success(`${newFriend.name} added to split pool!`, { position: "top-center" });
+    toast.success(`${name} added to split pool! 💸`, { position: "top-center" });
   };
 
   const handleRemoveFriend = (id) => {
-    if (friends.length <= 1) {
-      toast.error("Need at least 1 person to split the bill!", { position: "top-center" });
+    if (id === 'you') {
+      toast.error("You cannot remove yourself from the split!", { position: "top-center" });
       return;
     }
     const removedFriend = friends.find(f => f.id === id);
-    setFriends(friends.filter(f => f.id !== id));
+    const updatedFriends = friends.filter(f => f.id !== id);
+    setFriends(updatedFriends);
     
-    // Re-assign items belonging to deleted friend back to the first remaining friend
-    const remainingFirstId = friends.filter(f => f.id !== id)[0].id;
+    // Re-assign items belonging to deleted friend back to the first remaining friend (You)
+    const remainingFirstId = updatedFriends[0].id;
     const updatedAssignments = { ...assignments };
     Object.keys(updatedAssignments).forEach(itemId => {
       if (updatedAssignments[itemId] === id) {
@@ -94,66 +92,46 @@ export default function BillSplitter({ onClose }) {
     }));
   };
 
-  // Perform core split mathematics
+  // Perform core split mathematics proportionally including taxes/fees/discounts
   const calculateSplits = () => {
     const friendShares = friends.map(f => ({
       ...f,
-      subtotal: 0,
+      subtotalShare: 0,
       assignedItems: [],
       badge: null
     }));
 
     if (splitMode === 'equal') {
-      // Equal splitting
       const equalShareSubtotal = subtotal / friends.length;
       friendShares.forEach(f => {
-        f.subtotal = equalShareSubtotal;
+        f.subtotalShare = equalShareSubtotal;
       });
     } else {
-      // Item-based splitting
       cartItems.forEach(item => {
-        const assignedFriendId = assignments[item.id];
-        const itemTotalCost = item.price * item.quantity;
+        const assignedFriendId = assignments[item.id] || friends[0].id;
+        const customizationCost = (item.selectedCustomizations || []).reduce((sum, opt) => sum + (opt.price || 0), 0);
+        const itemTotalCost = (item.price + customizationCost) * item.quantity;
         const targetShare = friendShares.find(fs => fs.id === assignedFriendId);
         if (targetShare) {
-          targetShare.subtotal += itemTotalCost;
+          targetShare.subtotalShare += itemTotalCost;
           targetShare.assignedItems.push(item);
         }
       });
     }
 
-    // Distribute taxes and fixed fees proportionally or equally
     const numFriends = friends.length;
-    friendShares.forEach(f => {
-      // Share of tax is proportional to subtotal share
-      const ratio = subtotal > 0 ? f.subtotal / subtotal : 0;
-      f.gstShare = gst * ratio;
-      f.feesShare = (deliveryFee + platformFee) / numFriends;
-      f.totalShare = f.subtotal + f.gstShare + f.feesShare;
-    });
-
-    // Bestow award badges
-    let maxSpentId = null;
-    let maxSpentVal = -1;
-    friendShares.forEach(f => {
-      if (f.totalShare > maxSpentVal) {
-        maxSpentVal = f.totalShare;
-        maxSpentId = f.id;
-      }
-    });
+    const extraCharges = (packagingCharge + deliveryFee + platformFee + gst) - discount;
 
     friendShares.forEach(f => {
-      // 1. Biggest spender
-      if (f.id === maxSpentId && maxSpentVal > 0 && numFriends > 1) {
-        f.badge = { text: "Biggest Spender 💀", color: "bg-rose-500/10 text-rose-500 border border-rose-500/20" };
-      }
-      // 2. Dessert Addict (ordered chocolate, brownie, pastry, cold coffee)
-      else if (splitMode === 'item' && f.assignedItems.some(i => /chocolate|brownie|dessert|sweet|cake|icecream|coffee/i.test(i.name))) {
-        f.badge = { text: "Dessert Addict 🍰", color: "bg-amber-500/10 text-amber-500 border border-amber-500/20" };
-      }
-      // 3. Broke student mode
-      else if (splitMode === 'equal' || f.totalShare < (grandTotal / numFriends) * 0.8) {
-        f.badge = { text: "Broke Student 💸", color: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" };
+      const ratio = subtotal > 0 ? f.subtotalShare / subtotal : 0;
+      f.extraShare = extraCharges * ratio;
+      f.totalShare = f.subtotalShare + f.extraShare;
+
+      // Bestow award badges
+      if (f.totalShare > (finalTotal / numFriends) * 1.25 && numFriends > 1) {
+        f.badge = { text: "Spender 💀", color: "bg-rose-500/15 text-rose-500 border border-rose-500/20" };
+      } else if (f.totalShare < (finalTotal / numFriends) * 0.75 && numFriends > 1) {
+        f.badge = { text: "Saver 💸", color: "bg-emerald-500/15 text-emerald-500 border border-emerald-500/20" };
       }
     });
 
@@ -161,6 +139,289 @@ export default function BillSplitter({ onClose }) {
   };
 
   const computedShares = calculateSplits();
+
+  // EXPORT ACTION 1: PDF Invoice Generation
+  const handleExportPDF = () => {
+    const dateStr = new Date().toLocaleDateString('en-IN', { dateStyle: 'medium' });
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Popup blocked! Please enable popups for this site.");
+      return;
+    }
+
+    const itemsHtml = cartItems.map(item => {
+      const customizationCost = (item.selectedCustomizations || []).reduce((sum, opt) => sum + (opt.price || 0), 0);
+      return `
+        <tr style="border-bottom: 1px solid #f1f1f1;">
+          <td style="padding: 10px 0; font-size: 13px; color: #333;">
+            <div style="font-weight: bold;">${item.name}</div>
+            ${item.selectedCustomizations && item.selectedCustomizations.length > 0 ? `
+              <div style="font-size: 10px; color: #888; margin-top: 2px;">
+                Customizations: ${item.selectedCustomizations.map(c => `${c.category}: ${c.label}`).join(', ')}
+              </div>
+            ` : ""}
+          </td>
+          <td style="padding: 10px 0; font-size: 13px; color: #333; text-align: center;">x${item.quantity}</td>
+          <td style="padding: 10px 0; font-size: 13px; color: #333; text-align: right;">${formatPrice((item.price + customizationCost) * item.quantity)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const splitsHtml = computedShares.map(s => `
+      <div style="background: #fafafa; border: 1px solid #eaeaea; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-weight: bold; font-size: 14px; color: #111;">${s.name}</div>
+          <div style="font-size: 11px; color: #666; margin-top: 3px;">
+            ${splitMode === 'equal' ? 'Equal Share' : s.assignedItems.map(i => `${i.name} (x${i.quantity})`).join(', ') || 'No dishes assigned'}
+          </div>
+        </div>
+        <div style="font-weight: bold; font-size: 14px; color: #ff5200; font-family: monospace;">${formatPrice(s.totalShare)}</div>
+      </div>
+    `).join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>CRAVE Invoice - Bill Split</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+            body {
+              font-family: 'Outfit', sans-serif;
+              margin: 0;
+              padding: 40px;
+              background: #ffffff;
+              color: #333333;
+            }
+            .invoice-container {
+              max-width: 600px;
+              margin: 0 auto;
+              border: 1px solid #e2e8f0;
+              border-radius: 24px;
+              padding: 40px;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #f1f5f9;
+              padding-bottom: 24px;
+              margin-bottom: 24px;
+            }
+            .logo {
+              font-size: 28px;
+              font-weight: 800;
+              color: #ff5200;
+              letter-spacing: -1px;
+            }
+            .logo span {
+              color: #111111;
+            }
+            .receipt-title {
+              font-size: 12px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              color: #94a3b8;
+              text-align: right;
+            }
+            .restaurant-name {
+              font-size: 18px;
+              font-weight: 600;
+              color: #0f172a;
+            }
+            .meta-info {
+              font-size: 12px;
+              color: #64748b;
+              margin-top: 4px;
+            }
+            .section-title {
+              font-size: 11px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 1.5px;
+              color: #64748b;
+              margin: 24px 0 12px 0;
+              border-bottom: 1px solid #f1f5f9;
+              padding-bottom: 6px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th {
+              text-align: left;
+              font-size: 11px;
+              text-transform: uppercase;
+              color: #94a3b8;
+              padding-bottom: 8px;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .totals-table {
+              margin-top: 15px;
+              float: right;
+              width: 250px;
+            }
+            .totals-table td {
+              padding: 4px 0;
+              font-size: 13px;
+            }
+            .grand-total {
+              font-size: 16px;
+              font-weight: 800;
+              color: #ff5200;
+            }
+            .footer {
+              margin-top: 40px;
+              text-align: center;
+              font-size: 11px;
+              color: #94a3b8;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-container">
+            <div class="header">
+              <div>
+                <div class="logo">CRAVE<span>.</span></div>
+                <div class="restaurant-name">${restaurant?.name || "Crave Partner"}</div>
+                <div class="meta-info">Date: ${dateStr} | Invoice: #CRV-${Math.floor(100000 + Math.random() * 900000)}</div>
+              </div>
+              <div>
+                <div class="receipt-title">Dorm Split Bill</div>
+              </div>
+            </div>
+
+            <div class="section-title">Order Items</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Dish Name</th>
+                  <th style="text-align: center; width: 60px;">Qty</th>
+                  <th style="text-align: right; width: 100px;">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div style="overflow: hidden; margin-bottom: 20px;">
+              <table class="totals-table">
+                <tr>
+                  <td style="color: #666;">Subtotal:</td>
+                  <td style="text-align: right; font-family: monospace;">${formatPrice(subtotal)}</td>
+                </tr>
+                ${discount > 0 ? `
+                <tr>
+                  <td style="color: #666;">Discount:</td>
+                  <td style="text-align: right; font-family: monospace; color: #16a34a;">-${formatPrice(discount)}</td>
+                </tr>` : ""}
+                <tr>
+                  <td style="color: #666;">Taxes & Packing:</td>
+                  <td style="text-align: right; font-family: monospace;">${formatPrice(gst + packagingCharge)}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666;">Delivery & Platform:</td>
+                  <td style="text-align: right; font-family: monospace;">${formatPrice(deliveryFee + platformFee)}</td>
+                </tr>
+                <tr style="border-top: 1px solid #e2e8f0; font-weight: bold;">
+                  <td class="grand-total">Total:</td>
+                  <td style="text-align: right; font-family: monospace;" class="grand-total">${formatPrice(finalTotal)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="clear: both;"></div>
+
+            <div class="section-title">Calculated Split Shares</div>
+            <div>
+              ${splitsHtml}
+            </div>
+
+            <div class="footer">
+              This is a computer-generated Crave Split Bill receipt.<br>
+              Crave Food Services Pvt. Ltd. | Smart Campus Network
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    toast.success("Printable PDF invoice opened in a new tab! 🖨️");
+  };
+
+  // EXPORT ACTION 2: Txt Summary Download
+  const handleDownloadSummaryTxt = () => {
+    const dateStr = new Date().toLocaleDateString('en-IN', { dateStyle: 'medium' });
+    let content = `==================================================\n`;
+    content += `                  CRAVE BILL SPLIT                \n`;
+    content += `==================================================\n`;
+    content += `Date: ${dateStr}\n`;
+    content += `Restaurant: ${restaurant?.name || "Crave Partner"}\n`;
+    content += `--------------------------------------------------\n`;
+    content += `ITEMS IN CART:\n`;
+    cartItems.forEach(item => {
+      content += `- ${item.name} x${item.quantity}: ${formatPrice(item.price * item.quantity)}\n`;
+    });
+    content += `--------------------------------------------------\n`;
+    content += `BILL BREAKDOWN:\n`;
+    content += `Subtotal: ${formatPrice(subtotal)}\n`;
+    if (discount > 0) content += `Discount: -${formatPrice(discount)}\n`;
+    content += `GST & Restaurant Charges: ${formatPrice(gst)}\n`;
+    content += `Delivery & Platform Fees: ${formatPrice(deliveryFee + platformFee)}\n`;
+    content += `Packaging Charge: ${formatPrice(packagingCharge)}\n`;
+    content += `Grand Total: ${formatPrice(finalTotal)}\n`;
+    content += `--------------------------------------------------\n`;
+    content += `INDIVIDUAL SPLITS (${splitMode === 'equal' ? 'EQUAL SPLIT' : 'ITEMIZED'}):\n`;
+    computedShares.forEach(s => {
+      content += `${s.name}: ${formatPrice(s.totalShare)}\n`;
+      if (splitMode === 'item' && s.assignedItems.length > 0) {
+        content += `  └─ Assigned: ${s.assignedItems.map(i => `${i.name} (x${i.quantity})`).join(', ')}\n`;
+      }
+    });
+    content += `==================================================\n`;
+    content += `             Thank you for choosing CRAVE!        \n`;
+    content += `==================================================\n`;
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Crave_Bill_Split_${(restaurant?.name || "Order").replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Text summary card downloaded successfully! 📄");
+  };
+
+  // EXPORT ACTION 3: Mock Image Download Trigger
+  const handleDownloadShareCard = () => {
+    setIsDownloadingImage(true);
+    setTimeout(() => {
+      setIsDownloadingImage(false);
+      setShowShareModal(false);
+      toast.success("Split card saved to your gallery successfully! 📸", {
+        description: "Your glassmorphic share card is ready to send."
+      });
+    }, 1500);
+  };
+
+  const handleCopySummary = () => {
+    const text = computedShares.map(s => 
+      `${s.initials} ${s.name}: ${formatPrice(s.totalShare)} (${s.assignedItems.map(i => `${i.name} x${i.quantity}`).join(', ') || 'Equal Split'})`
+    ).join('\n');
+    navigator.clipboard.writeText(`Crave Bill Split:\n${text}\nGrand Total: ${formatPrice(finalTotal)}`);
+    toast.success("Split breakdown copied to clipboard! 📋");
+  };
 
   return (
     <motion.div
@@ -180,7 +441,7 @@ export default function BillSplitter({ onClose }) {
         <div className="p-5 border-b border-black/[0.05] dark:border-white/[0.05] flex items-center justify-between bg-neutral-50 dark:bg-neutral-900/30">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-brand/5 dark:bg-brand/10 flex items-center justify-center text-brand">
-              <Calculator size={20} />
+              <Users size={20} />
             </div>
             <div>
               <h2 className="text-base font-black text-neutral-850 dark:text-neutral-50">Dorm Bill Splitter</h2>
@@ -248,7 +509,7 @@ export default function BillSplitter({ onClose }) {
                 type="submit"
                 className="h-10 px-4 bg-brand hover:bg-brand-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer focus:outline-none"
               >
-                <UserPlus size={14} /> Add
+                <Plus size={14} /> Add
               </button>
             </form>
 
@@ -257,16 +518,20 @@ export default function BillSplitter({ onClose }) {
               {friends.map((f) => (
                 <div 
                   key={f.id}
-                  className="pl-2.5 pr-1.5 h-8 rounded-full bg-neutral-100 dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.04] flex items-center gap-1.5"
+                  className="pl-1.5 pr-2.5 h-8 rounded-full bg-neutral-100 dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.04] flex items-center gap-1.5 shadow-3xs"
                 >
-                  <span className="text-sm leading-none">{f.avatar}</span>
+                  <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${f.avatarGradient} text-white font-extrabold flex items-center justify-center text-[8px] uppercase shrink-0`}>
+                    {f.initials}
+                  </div>
                   <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">{f.name}</span>
-                  <button
-                    onClick={() => handleRemoveFriend(f.id)}
-                    className="w-5 h-5 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-400 hover:text-rose-500 flex items-center justify-center cursor-pointer focus:outline-none transition-colors"
-                  >
-                    <X size={10} strokeWidth={3} />
-                  </button>
+                  {f.id !== 'you' && (
+                    <button
+                      onClick={() => handleRemoveFriend(f.id)}
+                      className="w-4 h-4 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-400 hover:text-rose-500 flex items-center justify-center cursor-pointer focus:outline-none transition-colors"
+                    >
+                      &times;
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -286,7 +551,7 @@ export default function BillSplitter({ onClose }) {
                   return (
                     <div 
                       key={item.id}
-                      className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-900/30 border border-black/[0.03] dark:border-white/[0.03] flex items-center justify-between gap-3"
+                      className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-900/30 border border-black/[0.03] dark:border-white/[0.03] flex items-center justify-between gap-3 animate-fade-in"
                     >
                       <div className="min-w-0">
                         <h4 className="text-xs font-extrabold text-neutral-800 dark:text-neutral-200 truncate leading-tight">{item.name}</h4>
@@ -303,7 +568,7 @@ export default function BillSplitter({ onClose }) {
                       >
                         {friends.map(f => (
                           <option key={f.id} value={f.id}>
-                            {f.avatar} {f.name}
+                            {f.name}
                           </option>
                         ))}
                       </select>
@@ -324,11 +589,13 @@ export default function BillSplitter({ onClose }) {
               {computedShares.map((share) => (
                 <div 
                   key={share.id}
-                  className="p-4 rounded-2xl bg-gradient-to-br from-neutral-50 to-neutral-50/25 dark:from-neutral-900/40 dark:to-neutral-900/10 border border-black/[0.03] dark:border-white/[0.03] flex items-start justify-between gap-4"
+                  className="p-4 rounded-2xl bg-gradient-to-br from-neutral-50 to-neutral-50/25 dark:from-neutral-900/40 dark:to-neutral-900/10 border border-black/[0.03] dark:border-white/[0.03] flex items-start justify-between gap-4 animate-scale-up"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-base leading-none">{share.avatar}</span>
+                      <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${share.avatarGradient} text-white font-extrabold flex items-center justify-center text-[8px] uppercase shrink-0`}>
+                        {share.initials}
+                      </div>
                       <h4 className="text-xs font-black text-neutral-800 dark:text-neutral-100">{share.name}</h4>
                       {share.badge && (
                         <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider ${share.badge.color}`}>
@@ -355,11 +622,39 @@ export default function BillSplitter({ onClose }) {
                       {formatPrice(share.totalShare)}
                     </span>
                     <span className="text-[9px] text-neutral-400 font-medium">
-                      (Base: {formatPrice(share.subtotal)} + Tax/Fees)
+                      (Base: {formatPrice(share.subtotalShare)} + Tax/Fees)
                     </span>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Premium Share / Exports Bar inside Cart Spliter */}
+          <div className="border-t border-black/[0.03] dark:border-white/[0.03] pt-4.5 space-y-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 block">Export & Share Split:</span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={handleExportPDF}
+                className="h-9 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-200 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer focus:outline-none"
+              >
+                <Printer size={12} /> PDF Invoice
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="h-9 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-200 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer focus:outline-none"
+              >
+                <Eye size={12} /> Share Card
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadSummaryTxt}
+                className="h-9 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-gray-700 dark:text-gray-200 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer focus:outline-none"
+              >
+                <Download size={12} /> Receipt Txt
+              </button>
             </div>
           </div>
 
@@ -369,11 +664,11 @@ export default function BillSplitter({ onClose }) {
         <div className="p-5 border-t border-black/[0.05] dark:border-white/[0.05] bg-neutral-50 dark:bg-neutral-900/30 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 leading-none block">Total Basket Cost</span>
-            <span className="text-lg font-black text-neutral-850 dark:text-neutral-50 mt-1 block">{formatPrice(grandTotal)}</span>
+            <span className="text-lg font-black text-neutral-850 dark:text-neutral-50 mt-1 block">{formatPrice(finalTotal)}</span>
           </div>
           <button
             onClick={() => {
-              toast.success("Splits copied! You're ready to request pay.", { icon: "💳" });
+              handleCopySummary();
               onClose();
             }}
             className="h-11 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer focus:outline-none"
@@ -382,6 +677,82 @@ export default function BillSplitter({ onClose }) {
           </button>
         </div>
       </motion.div>
+
+      {/* Glassmorphic Dark-themed Share Modal Card */}
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 15 }}
+              className="relative w-full max-w-sm bg-gradient-to-b from-slate-900 to-black border border-white/[0.08] rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-left text-white"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="absolute top-4 right-4 p-1.5 bg-white/[0.05] hover:bg-white/[0.1] rounded-full text-gray-400 hover:text-white transition-colors cursor-pointer focus:outline-none"
+              >
+                <X size={14} />
+              </button>
+
+              {/* CRAVE Premium Card Branding Header */}
+              <div className="flex items-center justify-between border-b border-white/[0.05] pb-3.5">
+                <div>
+                  <h3 className="text-sm font-black tracking-wide text-brand uppercase">CRAVE SPLITZ</h3>
+                  <p className="text-[9px] text-zinc-500 font-extrabold uppercase tracking-wider">Campus Sharing Receipt</p>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-500 font-bold">#S-${Math.floor(100 + Math.random()*900)}</span>
+              </div>
+
+              {/* Huge Split Sum Banner */}
+              <div className="text-center py-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl relative overflow-hidden">
+                <span className="text-[9px] text-zinc-400 font-black uppercase tracking-widest block mb-1">TOTAL GRAND TOTAL</span>
+                <span className="text-3xl font-black text-brand tracking-tight block drop-shadow-lg">{formatPrice(finalTotal)}</span>
+                <p className="text-[10px] text-zinc-500 font-bold mt-1 uppercase tracking-wider">Restaurant: {restaurant?.name || "Crave Kitchen"}</p>
+              </div>
+
+              {/* Glassmorphic Friend Share Listings */}
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {computedShares.map(s => (
+                  <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.03]">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${s.avatarGradient} text-white font-extrabold flex items-center justify-center text-[7px] uppercase`}>
+                        {s.initials}
+                      </div>
+                      <span className="text-xs font-bold text-zinc-350">{s.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-brand font-mono">{formatPrice(s.totalShare)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Micro-animation Action CTA */}
+              <button
+                onClick={handleDownloadShareCard}
+                disabled={isDownloadingImage}
+                className="w-full h-11 bg-brand hover:bg-brand-hover text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isDownloadingImage ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Saving to Gallery...
+                  </>
+                ) : (
+                  <>
+                    <Download size={13} strokeWidth={2.5} /> Save Split Card Image
+                  </>
+                )}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

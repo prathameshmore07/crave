@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Heart, Flame, X, Sparkles, RotateCcw } from 'lucide-react';
+import { Heart, Flame, X, Sparkles, RotateCcw, Clock } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { formatPrice } from '../utils/formatPrice';
 import { toast } from 'sonner';
 import DishImage from '../components/common/DishImage';
+import { getUserJsonItem, setUserItem } from '../utils/storage';
 
 // Exquisite curated deck of campus favorites
 const EXPLORER_DECK = [
@@ -170,8 +171,8 @@ function SwipeCard({ item, onSwipeLeft, onSwipeRight, active }) {
           <span className="bg-white/90 dark:bg-neutral-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-brand shadow-sm flex items-center gap-1">
             <Sparkles size={10} /> {item.popularityTag}
           </span>
-          <span className="bg-black/45 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold text-white">
-            ⏱ {item.deliveryTime}
+          <span className="bg-black/45 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white flex items-center gap-1">
+            <Clock size={11} /> {item.deliveryTime}
           </span>
         </div>
 
@@ -260,6 +261,25 @@ export default function FoodExplorer() {
   };
 
   const handleSwipeRight = (item) => {
+    try {
+      const favorites = getUserJsonItem('saved_for_later', []);
+      if (!favorites.some(fav => fav.id === item.id)) {
+        favorites.push({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          isVeg: item.isVeg,
+          imageUrl: item.imageUrl,
+          restaurant: item.restaurant,
+          restaurantId: item.restaurantId,
+          funDescription: item.funDescription
+        });
+        setUserItem('saved_for_later', favorites);
+        window.dispatchEvent(new Event('wishlist-updated'));
+      }
+    } catch (err) {
+      console.error("Failed to save dish to wishlist:", err);
+    }
     setIndex(prev => prev + 1);
     triggerBurst("save");
     toast.success(`Saved ${item.name} to Wishlist!`, { position: 'top-center', duration: 1000 });

@@ -12,33 +12,44 @@ import { menuItemImages } from '../../data/restaurants';
 // use shared brand assets across payment flow
 import logo from '../../assets/logo.png';
 
-const loadingSteps = [
-  { id: 1, label: "Securing checkout gateway", desc: "End-to-end encrypted node connection" },
-  { id: 2, label: "Processing secure token", desc: "Bank response signature verification" },
-  { id: 3, label: "Transmitting order to kitchen", desc: "Instructions sent to restaurant terminal" },
-  { id: 4, label: "Securing delivery partner", desc: "Immediate courier pickup assigned" }
-];
-
-export default function ProcessingStep({ orderDetails, orderTotal }) {
+export default function ProcessingStep({ orderDetails, orderTotal, onOrderComplete }) {
   const navigate = useNavigate();
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
 
+  // show secure order processing flow
+  const loadingSteps = [
+    { id: 1, label: "Verifying payment session", desc: "Verifying transaction with secure SSL connection" },
+    { id: 2, label: "Confirming kitchen request", desc: "Transmitting recipe blueprint and cooking notes" },
+    { id: 3, label: "Assigning delivery partner", desc: "Locating nearest campus rider captain" },
+    { id: 4, label: "Securing live tracking channel", desc: "Configuring live GPS telemetry link" },
+    { id: 5, label: "Finalizing order packet", desc: "Generating secure order delivery hash" }
+  ];
+
   useEffect(() => {
     if (currentStepIdx < loadingSteps.length) {
-      const duration = currentStepIdx === 0 ? 1000 : currentStepIdx === 1 ? 1200 : currentStepIdx === 2 ? 1000 : 1200;
+      // realistic sequential timing
+      const durations = [1000, 1200, 1100, 1000, 1200];
       const timer = setTimeout(() => {
         setCurrentStepIdx(prev => prev + 1);
-      }, duration);
+      }, durations[currentStepIdx] || 1000);
       return () => clearTimeout(timer);
     } else {
       setIsDone(true);
     }
-  }, [currentStepIdx]);
+  }, [currentStepIdx, loadingSteps.length]);
+
+  // No auto-redirect — user stays on Order Confirmed screen
+  // and must click "Track Live Order" to go to tracking page
 
   const handleTrackClick = () => {
-    navigate(`/order/${orderDetails?.orderId}/track`);
+    // force redirect to tracking after order creation
+    navigate(`/tracking/${orderDetails?.orderId}`, { replace: true });
+    // THEN clear cart safely after navigation
+    if (onOrderComplete) {
+      setTimeout(() => onOrderComplete(), 200);
+    }
   };
 
   const handleContinueOrdering = () => {
@@ -384,6 +395,22 @@ export default function ProcessingStep({ orderDetails, orderTotal }) {
                 </div>
               </div>
             </div>
+
+            {/* SECTION 3.5: DELIVERY ADDRESS (Premium Compact Row) */}
+            {orderDetails?.deliveryAddress && (
+              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-3 flex items-start gap-3 text-left">
+                <MapPin size={16} className="text-brand shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-wider block">Delivery Address</span>
+                  <p className="text-xs font-bold text-zinc-200 truncate">
+                    {orderDetails.deliveryAddress.name} ({orderDetails.deliveryAddress.type || "Home"})
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-medium truncate mt-0.5">
+                    {orderDetails.deliveryAddress.flat}, {orderDetails.deliveryAddress.landmark}, {orderDetails.deliveryAddress.area}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* SECTION 4: ASSIGNED RIDER CARD (Premium Compact Row) */}
             {orderDetails?.riderInfo && (

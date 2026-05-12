@@ -917,32 +917,31 @@ export const restaurants = compiledRestaurants.map(rest => {
         isMostOrdered: item.isMostOrdered || false,
         rating: item.rating,
         prepTime: item.prepTime,
-        imageUrl: item.imageUrl
+        imageUrl: item.imageUrl,
+        category: catName
       }))
     }));
   } else {
     // Normal restaurant categories - calling createRestaurantMenu once per restaurant
     // and copying menu items to prevent shared fallback corruption or mutations
-    const fullMenu = createRestaurantMenu(rest.cuisines, rest.isVeg, rest.isPureVeg, rest.name).map(item => ({
-      ...item // isolate image state per menu item
-    }));
+    const fullMenu = createRestaurantMenu(rest.cuisines, rest.isVeg, rest.isPureVeg, rest.name);
 
     menuCategories = [
       {
         name: "Recommended Classics",
-        items: fullMenu.slice(0, 4)
+        items: fullMenu.slice(0, 4).map(item => ({ ...item, category: "Recommended Classics" }))
       },
       {
         name: "Main Course Specialties",
-        items: fullMenu.slice(4, 8)
+        items: fullMenu.slice(4, 8).map(item => ({ ...item, category: "Main Course Specialties" }))
       },
       {
         name: "Sides & Accompaniments",
-        items: fullMenu.slice(8, 12)
+        items: fullMenu.slice(8, 12).map(item => ({ ...item, category: "Sides & Accompaniments" }))
       },
       {
         name: "Sweets & Coolers",
-        items: fullMenu.slice(12, 16)
+        items: fullMenu.slice(12, 16).map(item => ({ ...item, category: "Sweets & Coolers" }))
       }
     ];
   }
