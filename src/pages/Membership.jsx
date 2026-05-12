@@ -114,11 +114,10 @@ export default function Membership() {
 
     return (
       <div
-        className={`relative flex flex-col rounded-2xl border bg-white dark:bg-dark-surface shadow-sm transition-all ${
-          planKey === 'individual'
+        className={`relative flex flex-col rounded-2xl border bg-white dark:bg-dark-surface shadow-sm transition-all ${planKey === 'individual'
             ? 'border-amber-300/60 dark:border-amber-700/40 ring-1 ring-amber-500/20'
             : 'border-black/[0.08] dark:border-white/[0.08]'
-        }`}
+          }`}
       >
         {badge && (
           <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wide bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-2 py-1 rounded-md">
@@ -158,11 +157,10 @@ export default function Membership() {
                         [planKey]: key,
                       }))
                     }
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                      selected
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selected
                         ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
                         : 'bg-gray-50 dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border-black/[0.06] dark:border-white/[0.08] hover:border-amber-400/50'
-                    }`}
+                      }`}
                   >
                     {label}
                     <span className="block text-[10px] font-bold opacity-90 mt-0.5">
@@ -213,7 +211,7 @@ export default function Membership() {
               <input
                 type="email"
                 value={studentEmail}
-                onChange={(e) => setStudentEmail(e.target.value.toLowerCase())}
+                onChange={(e) => setStudentEmail(e.target.value)}
                 placeholder="you@university.edu.in"
                 className="w-full px-3 py-2.5 rounded-xl text-sm bg-white dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.1] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               />
