@@ -1,9 +1,18 @@
 import { create } from 'zustand';
 import { getUserItem, getUserJsonItem, setUserItem, removeUserItem } from '../utils/storage';
+import useMembershipStore from './membershipStore';
+
+const sanitizeCartItems = (items) => {
+  return (items || []).map(item => ({
+    ...item,
+    imageUrl: item.imageUrl || item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+    selectedCustomizations: item.selectedCustomizations || []
+  }));
+};
 
 export const useCartStore = create((set, get) => {
   // Retrieve initial user-scoped states from localStorage
-  const items = getUserJsonItem('cart_items', []);
+  const items = sanitizeCartItems(getUserJsonItem('cart_items', []));
   const restaurant = getUserJsonItem('cart_restaurant', null);
   const tip = Number(getUserItem('cart_tip', '0'));
   const appliedCoupon = getUserJsonItem('cart_coupon', null);
@@ -22,7 +31,7 @@ export const useCartStore = create((set, get) => {
     // Rehydrate/refresh state when user logs in or out
     loadForUser: () => {
       set({
-        items: getUserJsonItem('cart_items', []),
+        items: sanitizeCartItems(getUserJsonItem('cart_items', [])),
         restaurant: getUserJsonItem('cart_restaurant', null),
         tip: Number(getUserItem('cart_tip', '0')),
         appliedCoupon: getUserJsonItem('cart_coupon', null),
@@ -33,18 +42,6 @@ export const useCartStore = create((set, get) => {
     },
 
     addItem: (item, restaurantInfo) => {
-      const currentRestaurant = get().restaurant;
-      const differentRestaurant = currentRestaurant && currentRestaurant.id !== restaurantInfo.id;
-      
-      if (differentRestaurant) {
-        set({
-          pendingItem: item,
-          pendingRestaurant: restaurantInfo,
-          showReplaceModal: true
-        });
-        return;
-      }
-
       set((state) => {
         // Safe deep/shallow mapping of current cart items to avoid references sharing
         let newItems = state.items.map(i => ({
@@ -61,6 +58,12 @@ export const useCartStore = create((set, get) => {
           JSON.stringify(i.selectedCustomizations) === JSON.stringify(incomingCustomizations)
         );
 
+        const sanitizedItem = {
+          ...item,
+          imageUrl: item.imageUrl || item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+          selectedCustomizations: incomingCustomizations
+        };
+
         if (existingItemIndex > -1) {
           // Update quantity on a completely new object reference
           newItems[existingItemIndex] = {
@@ -70,9 +73,8 @@ export const useCartStore = create((set, get) => {
         } else {
           // Push a completely unique object reference with unique keys
           newItems.push({ 
-            ...item, 
-            quantity: 1, 
-            selectedCustomizations: incomingCustomizations 
+            ...sanitizedItem, 
+            quantity: 1
           });
         }
 
@@ -94,10 +96,15 @@ export const useCartStore = create((set, get) => {
         removeUserItem('cart_coupon');
         removeUserItem('cart_tip');
         
+        const sanitizedPending = {
+          ...pendingItem,
+          imageUrl: pendingItem.imageUrl || pendingItem.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+          selectedCustomizations: pendingItem.selectedCustomizations || []
+        };
+
         const newItems = [{ 
-          ...pendingItem, 
-          quantity: 1, 
-          selectedCustomizations: pendingItem.selectedCustomizations || [] 
+          ...sanitizedPending, 
+          quantity: 1
         }];
         
         // Save to user-scoped localStorage
@@ -259,25 +266,41 @@ export const useCartStore = create((set, get) => {
         }
       }
 
-      const deliveryFee = state.restaurant 
-        ? (state.appliedCoupon?.type === 'delivery' && subtotal >= state.appliedCoupon.minOrder ? 0 : 35) 
+      // Crave PRO at checkout: waive delivery + platform fee + apply % off subtotal (coupon logic unchanged)
+      const membershipActive = useMembershipStore.getState().isActive();
+      const memberDiscountPct = membershipActive ? useMembershipStore.getState().getDiscountPercent() : 0;
+      const membershipDiscount =
+        membershipActive && subtotal > 0 ? Math.round((subtotal * memberDiscountPct) / 100) : 0;
+
+      const couponFreeDelivery =
+        state.appliedCoupon?.type === 'delivery' &&
+        subtotal >= (state.appliedCoupon.minOrder ?? 0);
+
+      const deliveryFee = state.restaurant
+        ? couponFreeDelivery || membershipActive
+          ? 0
+          : 35
         : 0;
 
       const gst = Math.round(subtotal * 0.05); // 5% GST
-      const platformFee = subtotal > 0 ? 2 : 0;
+      const platformFee = subtotal > 0 ? (membershipActive ? 0 : 2) : 0;
       const packagingCharge = subtotal > 0 ? 15 : 0;
-      const total = subtotal > 0 ? (subtotal - discount + deliveryFee + gst + platformFee + state.tip) : 0;
+      const total =
+        subtotal > 0
+          ? subtotal - discount - membershipDiscount + deliveryFee + gst + platformFee + state.tip
+          : 0;
       const finalTotal = total + packagingCharge;
 
       return {
         subtotal,
         discount,
+        membershipDiscount,
         deliveryFee,
         gst,
         platformFee,
         packagingCharge,
         total,
-        finalTotal
+        finalTotal,
       };
     }
   };

@@ -5,35 +5,11 @@ import { useUiStore } from '../../store/uiStore';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
-import { ChevronDown, Search, Sun, Moon, ShoppingBag, Bell, Compass } from 'lucide-react';
+import { ChevronDown, Search, Sun, Moon, ShoppingBag, Bell, Compass, Heart, User, Crown } from 'lucide-react';
 import { cities } from '../../data/cities';
 import { motion } from 'framer-motion';
 import logo from '../../assets/logo.png';
-
-const DonutIcon = ({ className, size = 20 }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path 
-      d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 11.5 21.95 11 21.85 10.5C21.1 10.9 20.1 11 19.5 10.5C18.5 9.7 18.8 8.2 19.8 7.5C19.3 6 18.3 4.7 17 3.8C16 4.8 14.5 5 13.5 4C13 3.5 13.1 2.5 13.5 1.85C13 1.75 12.5 1.7 12 1.7V2ZM12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8Z" 
-      fill="#F43F5E"
-    />
-    <path 
-      d="M12 3.5C7.306 3.5 3.5 7.306 3.5 12C3.5 16.694 7.306 20.5 12 20.5C16.694 20.5 20.5 16.694 20.5 12C20.5 11.7 20.47 11.4 20.4 11.1C19.7 11.3 18.9 11 18.5 10.5C17.2 9.4 17.6 7.4 19 6.5C18.4 5.2 17.4 4.1 16.2 3.3C15.2 4.3 13.5 4.5 12.5 3.5C12.3 3.3 12.1 3.1 12 3V3.5ZM12 9C13.657 9 15 10.343 15 12C15 13.657 13.657 15 12 15C10.343 15 9 13.657 9 12C9 10.343 10.343 9 12 9Z" 
-      fill="#FDA4AF"
-    />
-    <rect x="6" y="11" width="2" height="0.8" rx="0.4" transform="rotate(30 6 11)" fill="#FFF" />
-    <rect x="10" y="5" width="2" height="0.8" rx="0.4" transform="rotate(-45 10 5)" fill="#FFF" />
-    <rect x="15" y="15" width="2" height="0.8" rx="0.4" transform="rotate(15 15 15)" fill="#FFF" />
-    <rect x="7" y="16" width="2" height="0.8" rx="0.4" transform="rotate(-15 7 16)" fill="#FFF" />
-    <rect x="14" y="9" width="2" height="0.8" rx="0.4" transform="rotate(60 14 9)" fill="#FFF" />
-  </svg>
-);
+import useMembershipStore from '../../store/membershipStore';
 
 const getInitials = (name) => {
   if (!name) return "U";
@@ -43,13 +19,11 @@ const getInitials = (name) => {
 };
 
 const getAvatarColor = (name) => {
+  // Ultra-premium, elegant, minimal slate-silver and dark metallic themes (Stripe/Zomato Premium style)
   const gradients = [
-    "from-rose-500 to-red-600 text-white", // Brand Red Gradient
-    "from-violet-500 to-indigo-600 text-white", // Violet/Indigo
-    "from-emerald-400 to-teal-600 text-white", // Emerald/Teal
-    "from-amber-400 to-orange-500 text-white", // Amber/Orange
-    "from-sky-400 to-blue-600 text-white", // Sky/Blue
-    "from-fuchsia-400 to-pink-600 text-white" // Pink/Fuchsia
+    "from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-950 text-zinc-800 dark:text-zinc-200",
+    "from-stone-100 to-stone-200 dark:from-stone-900 dark:to-stone-950 text-stone-800 dark:text-stone-200",
+    "from-neutral-100 to-neutral-200 dark:from-neutral-900 dark:to-neutral-950 text-neutral-800 dark:text-neutral-200"
   ];
   if (!name) return gradients[0];
   let sum = 0;
@@ -78,6 +52,7 @@ export default function Header({ onOpenCityModal }) {
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cityObj = cities.find(c => c.id === selectedCity);
+  const isMembershipActive = useMembershipStore((state) => state.isActive());
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[100] h-16 md:h-20 bg-[--header-bg] backdrop-blur-md border-b border-black/[0.04] dark:border-white/[0.05] select-none transition-colors duration-200">
@@ -141,17 +116,27 @@ export default function Header({ onOpenCityModal }) {
           </button>
         </div>
 
-        {/* Navigation Links for Premium Features */}
-        <div className="hidden lg:flex items-center gap-5 mr-4 shrink-0 border-r border-black/[0.06] dark:border-white/[0.06] pr-5">
+        {/* Navigation: one Crave PRO entry (desktop/tablet: full strip; mobile: compact link in actions below) */}
+        <div className="hidden md:flex items-center gap-5 mr-4 shrink-0 border-r border-black/[0.06] dark:border-white/[0.06] pr-5">
           <Link 
             to="/explorer" 
             className={`text-[11px] font-black uppercase tracking-widest hover:text-brand transition-colors flex items-center gap-1.5 ${
               location.pathname === '/explorer' ? 'text-brand' : 'text-neutral-500 dark:text-neutral-400'
             }`}
           >
-            {/* professional icon replacement */}
-            {/* remove unnecessary emoji clutter */}
             <Compass size={13} className="text-brand animate-spin" style={{ animationDuration: '6s' }} /> Explorer
+          </Link>
+          <Link 
+            to="/membership" 
+            className={`text-[11px] font-black uppercase tracking-widest hover:text-amber-500 transition-colors flex items-center gap-1.5 ${
+              location.pathname.startsWith('/membership') ? 'text-amber-500' : 'text-neutral-500 dark:text-neutral-400'
+            }`}
+          >
+            <Crown size={13} className="text-amber-500" />
+            {isMembershipActive ? 'My PRO' : 'CRAVE PRO'}
+            {!isMembershipActive && (
+              <span className="text-[7px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase leading-none">New</span>
+            )}
           </Link>
         </div>
 
@@ -167,6 +152,20 @@ export default function Header({ onOpenCityModal }) {
             <Search size={18} />
           </button>
 
+          {/* Mobile: single Crave PRO entry (crown + label — no duplicate floating icon elsewhere) */}
+          <Link
+            to="/membership"
+            className={`md:hidden flex items-center gap-1 shrink-0 rounded-full px-2 h-9 border border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors ${
+              location.pathname.startsWith('/membership') ? 'text-amber-500 border-amber-500/30' : 'text-neutral-600 dark:text-neutral-400'
+            }`}
+            aria-label="Crave PRO membership"
+          >
+            <Crown size={15} className="text-amber-500" />
+            <span className="text-[8px] font-black uppercase tracking-wide leading-tight text-center max-w-[56px]">
+              {isMembershipActive ? 'Active' : 'Crave PRO'}
+            </span>
+          </Link>
+
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleTheme}
@@ -175,6 +174,15 @@ export default function Header({ onOpenCityModal }) {
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+
+          {/* Wishlist */}
+          <Link
+            to="/wishlist"
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/[0.04] dark:hover:bg-white/[0.04] text-[--text-primary] focus:outline-none relative cursor-pointer"
+            aria-label="Wishlist"
+          >
+            <Heart size={18} className="hover:text-brand transition-colors" />
+          </Link>
 
           {/* Notifications */}
           <button
@@ -215,10 +223,10 @@ export default function Header({ onOpenCityModal }) {
           {/* Profile Avatar (32px circle, initials with premium gradient) */}
           <Link
             to="/profile"
-            className={`w-[32px] h-[32px] rounded-full bg-gradient-to-tr ${user ? getAvatarColor(user.name) : 'from-zinc-400 to-zinc-500 text-white'} flex items-center justify-center border border-black/[0.04] dark:border-white/[0.08] text-[11px] font-bold tracking-wider focus:outline-none overflow-hidden transition-all shadow-xs hover:scale-105 active:scale-95 select-none`}
+            className={`w-[32px] h-[32px] rounded-full bg-gradient-to-tr ${user ? getAvatarColor(user.name) : 'from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-950 text-zinc-800 dark:text-zinc-200'} flex items-center justify-center border border-black/[0.04] dark:border-white/[0.08] text-[11px] font-black tracking-normal focus:outline-none overflow-hidden transition-all shadow-xs hover:scale-105 active:scale-95 select-none`}
             aria-label="Profile"
           >
-            <DonutIcon size={18} className="animate-pulse" />
+            {user ? getInitials(user.name) : <User size={15} />}
           </Link>
         </div>
         

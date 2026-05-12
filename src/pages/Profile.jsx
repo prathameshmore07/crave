@@ -8,15 +8,17 @@ import { useForm } from 'react-hook-form';
 import OrderHistory from '../components/profile/OrderHistory';
 import SavedAddresses from '../components/profile/SavedAddresses';
 import FavRestaurants from '../components/profile/FavRestaurants';
+import MembershipProfile from '../components/profile/MembershipProfile';
 import { menuItemImages } from '../data/restaurants';
 import { formatPrice } from '../utils/formatPrice';
 import DishImage from '../components/common/DishImage';
 import { 
   User, MapPin, Heart, ClipboardList, HelpCircle, Save, LogOut, 
   ChevronDown, ChevronUp, Star, MessageSquare, PhoneCall,
-  Award, ShieldCheck, Sun, Moon, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2, Check
+  Award, ShieldCheck, Sun, Moon, Sparkles, RefreshCw, Eye, EyeOff, Edit3, X, Trash2, Check, Crown
 } from 'lucide-react';
 import { toast } from 'sonner';
+import useMembershipStore from '../store/membershipStore';
 
 const DonutIcon = ({ className, size = 20 }) => (
   <svg 
@@ -78,13 +80,11 @@ const getInitials = (name) => {
 };
 
 const getAvatarColor = (name) => {
+  // Ultra-premium, elegant, minimal slate-silver and dark metallic themes (Stripe/Zomato Premium style)
   const gradients = [
-    "from-rose-500 to-red-600 text-white", // Brand Red Gradient
-    "from-violet-500 to-indigo-600 text-white", // Violet/Indigo
-    "from-emerald-400 to-teal-600 text-white", // Emerald/Teal
-    "from-amber-400 to-orange-500 text-white", // Amber/Orange
-    "from-sky-400 to-blue-600 text-white", // Sky/Blue
-    "from-fuchsia-400 to-pink-600 text-white" // Pink/Fuchsia
+    "from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-950 text-zinc-800 dark:text-zinc-200",
+    "from-stone-100 to-stone-200 dark:from-stone-900 dark:to-stone-950 text-stone-800 dark:text-stone-200",
+    "from-neutral-100 to-neutral-200 dark:from-neutral-900 dark:to-neutral-950 text-neutral-800 dark:text-neutral-200"
   ];
   if (!name) return gradients[0];
   let sum = 0;
@@ -110,6 +110,12 @@ export default function Profile() {
   const submitReview = useReviewStore((state) => state.submitReview);
   const rateOrder = useOrderStore((state) => state.rateOrder);
   const deleteReview = useReviewStore((state) => state.deleteReview);
+
+  // Membership tier
+  const activeMembership = useMembershipStore((state) => state.activeMembership);
+  const isMemberActive = useMembershipStore((state) => state.isActive());
+  const planOptions = useMembershipStore((state) => state.getPlanOptions());
+  const membershipPlanName = isMemberActive && activeMembership ? planOptions[activeMembership.type]?.name : null;
 
   const [activeTab, setActiveTab] = useState("account"); // 'account', 'orders', 'addresses', 'favorites', 'reviews', 'faq'
   const [openFaqIdx, setOpenFaqIdx] = useState(null);
@@ -170,6 +176,7 @@ export default function Profile() {
 
   const tabs = [
     { id: 'account', label: 'Account Info', icon: User, desc: 'Contact details & credentials' },
+    { id: 'membership', label: 'My Membership', icon: Crown, desc: 'Premium subscription & benefits' },
     { id: 'orders', label: 'Past Orders', icon: ClipboardList, desc: 'Billing receipts & timelines' },
     { id: 'addresses', label: 'Saved Addresses', icon: MapPin, desc: 'Home, office, guest locations' },
     { id: 'favorites', label: 'My Favourites', icon: Heart, desc: 'Saved kitchens & cuisines' },
@@ -210,19 +217,33 @@ export default function Profile() {
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left z-10 flex-1 w-full">
           {/* Avatar Sphere with clean inline indicator */}
           <div className="relative shrink-0">
-            <div className={`w-24 h-24 rounded-[22px] bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-3xl font-extrabold tracking-wide shadow-md border border-white/20 dark:border-zinc-800 animate-in fade-in zoom-in-50 duration-500`} id="dynamic-avatar-profile">
-              <DonutIcon size={48} className="animate-pulse" />
+            <div className={`w-24 h-24 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-3xl font-black tracking-normal shadow-sm border border-zinc-200 dark:border-zinc-850 animate-in fade-in duration-500`} id="dynamic-avatar-profile">
+              {userInitials}
             </div>
             {/* Subtle Active indicator dot */}
-            <span className="absolute top-2 right-2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950 shadow-sm animate-pulse" />
+            <span className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-zinc-950 shadow-xs animate-pulse" />
           </div>
  
           <div className="space-y-3 mt-1 flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none truncate">{memberName}</h1>
-              <span className="inline-flex self-center sm:self-start bg-brand/10 text-brand text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg">
-                Active Member
-              </span>
+              {isMemberActive ? (
+                <span 
+                  onClick={() => setActiveTab('membership')}
+                  className="inline-flex self-center sm:self-start bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg cursor-pointer hover:bg-amber-500/20 transition-colors gap-1 items-center"
+                >
+                  <Crown size={10} className="text-amber-500" />
+                  {membershipPlanName || 'PRO Member'}
+                </span>
+              ) : (
+                <span 
+                  onClick={() => navigate('/membership')}
+                  className="inline-flex self-center sm:self-start bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg cursor-pointer hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition-colors gap-1 items-center group"
+                >
+                  Normal Member
+                  <span className="text-[7px] bg-amber-500 text-white px-1 py-0.5 rounded font-black leading-none group-hover:bg-amber-600 transition-colors">Upgrade</span>
+                </span>
+              )}
             </div>
             
             <p className="text-xs text-zinc-400 dark:text-zinc-500 font-bold tracking-tight">
@@ -428,28 +449,35 @@ export default function Profile() {
             </div>
           )}
 
-          {/* TAB 2: Past Orders View */}
+          {/* TAB 2: Membership Section */}
+          {activeTab === 'membership' && (
+            <div className="animate-fade-in">
+              <MembershipProfile />
+            </div>
+          )}
+
+          {/* TAB 3: Past Orders View */}
           {activeTab === 'orders' && (
             <div className="animate-fade-in">
               <OrderHistory />
             </div>
           )}
 
-          {/* TAB 3: Saved Locations list */}
+          {/* TAB 4: Saved Locations list */}
           {activeTab === 'addresses' && (
             <div className="animate-fade-in">
               <SavedAddresses />
             </div>
           )}
 
-          {/* TAB 4: Favorite Kitchens list */}
+          {/* TAB 5: Favorite Kitchens list */}
           {activeTab === 'favorites' && (
             <div className="animate-fade-in">
               <FavRestaurants />
             </div>
           )}
 
-          {/* TAB 5: Rating Feedbacks/Reviews Panel */}
+          {/* TAB 6: Rating Feedbacks/Reviews Panel */}
           {activeTab === 'reviews' && (() => {
             const customReviewsMap = customReviews || {};
             const history = orderHistory || [];
@@ -552,9 +580,9 @@ export default function Profile() {
                         onChange={(e) => setReviewSort(e.target.value)}
                         className="h-8 px-2.5 text-xs font-black bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/40 dark:border-zinc-800 rounded-lg outline-none text-zinc-800 dark:text-zinc-300 cursor-pointer"
                       >
-                        <option value="newest">🗓️ Newest First</option>
-                        <option value="highest">⭐ Highest Rated</option>
-                        <option value="lowest">⭐ Lowest Rated</option>
+                        <option value="newest">Newest First</option>
+                        <option value="highest">Highest Rated</option>
+                        <option value="lowest">Lowest Rated</option>
                       </select>
                     </div>
                   )}
@@ -615,9 +643,9 @@ export default function Profile() {
                               ))}
                             </div>
                             <div className="flex flex-wrap items-center gap-3 text-[9px] text-zinc-400 font-extrabold uppercase tracking-wide">
-                              <span>🍔 Food: {review.foodQuality}★</span>
-                              <span>🛵 Rider: {review.deliveryExperience}★</span>
-                              <span>📦 Package: {review.packaging}★</span>
+                              <span>Food: {review.foodQuality}★</span>
+                              <span>Rider: {review.deliveryExperience}★</span>
+                              <span>Package: {review.packaging}★</span>
                             </div>
                           </div>
 
@@ -770,7 +798,7 @@ export default function Profile() {
                         {/* Edit Dish Ratings */}
                         {editingReview.items && editingReview.items.length > 0 && (
                           <div className="space-y-3 py-3 px-4 bg-zinc-50/50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100/40 dark:border-zinc-800/40">
-                            <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-black uppercase tracking-wider block mb-1">🍕 Edit Dish Ratings</span>
+                            <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-black uppercase tracking-wider block mb-1">Edit Dish Ratings</span>
                             <div className="space-y-3.5">
                               {editingReview.items.map((item) => {
                                 const dishImg = menuItemImages[item.name] || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80";

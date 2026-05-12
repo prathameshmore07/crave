@@ -10,8 +10,9 @@ import TipSelector from './TipSelector';
 import BillSummary from './BillSummary';
 import SmartComboBuilder from './SmartComboBuilder';
 import CheckoutBillSplitter from '../checkout/CheckoutBillSplitter';
-import { X, ShoppingBag, Plus, ArrowRight } from 'lucide-react';
+import { X, ShoppingBag, Plus, ArrowRight, Crown } from 'lucide-react';
 import { formatPrice } from '../../utils/formatPrice';
+import useMembershipStore from '../../store/membershipStore';
 
 const recommendations = [
   { id: "rec-1", name: "Chilled Coca-Cola (330ml)", price: 40, isVeg: true, imageUrl: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150&auto=format&fit=crop&q=60" },
@@ -30,6 +31,7 @@ export default function CartDrawer() {
   const getCartTotals = useCartStore((state) => state.getCartTotals);
 
   const { finalTotal } = getCartTotals();
+  const isMemberActive = useMembershipStore((state) => state.isActive());
 
   const handleCheckoutRedirect = () => {
     setCartOpen(false);
@@ -204,6 +206,33 @@ export default function CartDrawer() {
             {/* Footer Pay Button */}
             {cartItems.length > 0 && (
               <div className="p-4 border-t border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-dark-surface flex flex-col gap-2">
+                
+                {/* Membership promo for non-members */}
+                {!isMemberActive && (
+                  <button
+                    onClick={() => {
+                      setCartOpen(false);
+                      navigate('/membership');
+                    }}
+                    className="w-full p-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-amber-500/40 transition-all group text-left"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                      <Crown size={16} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Get Crave PRO</span>
+                      <span className="text-[9px] text-amber-700/70 dark:text-amber-300/60 font-semibold">Member food discounts &amp; free delivery</span>
+                    </div>
+                    <ArrowRight size={12} className="text-amber-500 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                  </button>
+                )}
+
+                {isMemberActive && (
+                  <div className="w-full px-3 py-1.5 bg-amber-500/5 border border-amber-500/10 rounded-lg flex items-center gap-2 text-[9px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">
+                    <Crown size={11} className="text-amber-500" />
+                    PRO member discount applied
+                  </div>
+                )}
                 <button
                   onClick={handleCheckoutRedirect}
                   className="h-12 w-full bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-xl shadow-md flex items-center justify-between px-5 transition-colors cursor-pointer group focus:outline-none"

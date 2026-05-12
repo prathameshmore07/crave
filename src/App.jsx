@@ -20,6 +20,9 @@ import Tracking from './pages/Tracking';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 import FoodExplorer from './pages/FoodExplorer';
+import Membership from './pages/Membership';
+import MembershipCheckout from './pages/MembershipCheckout';
+import MembershipSuccess from './pages/MembershipSuccess';
 import NotFound from './pages/NotFound';
 import { Toaster } from 'sonner';
 import logo from './assets/logo.png';
@@ -117,6 +120,19 @@ export default function App() {
             <Route path="/restaurants" element={<RestaurantList />} />
             <Route path="/restaurant/:id" element={<RestaurantDetail />} />
             <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+            
+            {/* Membership routes */}
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/membership-checkout" element={
+              <PrivateRoute>
+                <MembershipCheckout />
+              </PrivateRoute>
+            } />
+            <Route path="/membership-success/:memberId" element={
+              <PrivateRoute>
+                <MembershipSuccess />
+              </PrivateRoute>
+            } />
             
             {/* Guarded checkout, tracking, and profile paths */}
             <Route path="/checkout" element={

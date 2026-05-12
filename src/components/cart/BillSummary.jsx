@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCartStore } from '../../store/cartStore';
+import useMembershipStore from '../../store/membershipStore';
 import { formatPrice } from '../../utils/formatPrice';
 import { FileText, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -7,9 +8,22 @@ import { motion } from 'framer-motion';
 export default function BillSummary() {
   const getCartTotals = useCartStore((state) => state.getCartTotals);
   const appliedCoupon = useCartStore((state) => state.appliedCoupon);
+  const restaurant = useCartStore((state) => state.restaurant);
   const tip = useCartStore((state) => state.tip);
+  const isMember = useMembershipStore((state) => state.isActive());
+  const memberDiscountPct = useMembershipStore((state) => (state.isActive() ? state.getDiscountPercent() : 0));
 
-  const { subtotal, discount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } = getCartTotals();
+  const { subtotal, discount, membershipDiscount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } =
+    getCartTotals();
+
+  const freeDeliveryLabel =
+    deliveryFee === 0 && restaurant && subtotal > 0
+      ? appliedCoupon?.type === 'delivery' && subtotal >= (appliedCoupon.minOrder ?? 0)
+        ? 'FREE · Coupon'
+        : isMember
+          ? 'FREE · Crave PRO'
+          : 'FREE'
+      : null;
 
   if (subtotal === 0) return null;
 
@@ -20,13 +34,13 @@ export default function BillSummary() {
           <FileText size={14} className="text-gray-400" />
           Bill Summary
         </div>
-        {discount > 0 && (
+        {(discount > 0 || membershipDiscount > 0) && (
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-md flex items-center gap-1"
           >
-            <Sparkles size={10} /> Saved {formatPrice(discount)}
+            <Sparkles size={10} /> Saved {formatPrice(discount + membershipDiscount)}
           </motion.span>
         )}
       </div>
@@ -52,12 +66,27 @@ export default function BillSummary() {
             <span className="font-extrabold">-{formatPrice(discount)}</span>
           </motion.div>
         )}
+        {membershipDiscount > 0 && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            className="flex justify-between items-center text-amber-700 dark:text-amber-400"
+          >
+            <span className="flex items-center gap-1">
+              <CheckCircle2 size={12} />
+              Crave PRO discount ({memberDiscountPct}%)
+            </span>
+            <span className="font-extrabold">-{formatPrice(membershipDiscount)}</span>
+          </motion.div>
+        )}
 
         {/* Delivery Fee */}
         <div className="flex justify-between items-center">
           <span>Delivery Partner Fee</span>
           {deliveryFee === 0 ? (
-            <span className="text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wide text-[10px]">FREE Delivery</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wide text-[10px] text-right max-w-[58%]">
+              {freeDeliveryLabel || 'FREE'}
+            </span>
           ) : (
             <span className="text-gray-800 dark:text-gray-200 font-bold">{formatPrice(deliveryFee)}</span>
           )}
@@ -66,7 +95,15 @@ export default function BillSummary() {
         {/* Platform Fee */}
         <div className="flex justify-between items-center">
           <span>Platform Fee</span>
-          <span className="text-gray-800 dark:text-gray-200 font-bold">{formatPrice(platformFee)}</span>
+          <span className="text-gray-800 dark:text-gray-200 font-bold">
+            {subtotal <= 0 ? formatPrice(0) : platformFee === 0 && isMember ? (
+              <span className="text-amber-700 dark:text-amber-400 text-[10px] font-extrabold uppercase tracking-wide">
+                Waived · PRO
+              </span>
+            ) : (
+              formatPrice(platformFee)
+            )}
+          </span>
         </div>
 
         {/* Packaging Charges */}

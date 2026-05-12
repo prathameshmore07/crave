@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
@@ -11,6 +11,7 @@ import { formatPrice } from '../utils/formatPrice';
 import { ShoppingBag, ArrowLeft, ShieldCheck, MapPin, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { riders } from '../data/riders';
+import useMembershipStore from '../store/membershipStore';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -27,16 +28,31 @@ export default function Checkout() {
   const [selectedMethodId, setSelectedMethodId] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
   const [confirmedTotal, setConfirmedTotal] = useState(0);
+  // ref to prevent empty-cart redirect after order placement
+  const orderPlacedRef = useRef(false);
 
-  const { subtotal, discount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } = getCartTotals();
+  const appliedCoupon = useCartStore((state) => state.appliedCoupon);
+  const isMember = useMembershipStore((state) => state.isActive());
 
-  // If cart is empty and we are not in processing state, redirect to home
+  const { subtotal, discount, membershipDiscount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } = getCartTotals();
+
+  const freeDeliveryLabel =
+    deliveryFee === 0 && activeRestaurant && subtotal > 0
+      ? appliedCoupon?.type === 'delivery' && subtotal >= (appliedCoupon.minOrder ?? 0)
+        ? 'FREE · Coupon'
+        : isMember
+          ? 'FREE · Crave PRO'
+          : 'FREE'
+      : null;
+
+  // If cart is genuinely empty (not due to order placement), redirect to home
+  // DO NOT redirect if order has been placed — wait for processing flow instead
   useEffect(() => {
-    if (cartItems.length === 0 && checkoutStep < 3) {
+    if (cartItems.length === 0 && checkoutStep < 3 && !createdOrder && !orderPlacedRef.current) {
       toast.info("Your basket is empty. Please add items to checkout.");
       navigate('/');
     }
-  }, [cartItems, checkoutStep, navigate]);
+  }, [cartItems, checkoutStep, navigate, createdOrder]);
 
   // Sync selected address if list changes
   useEffect(() => {
@@ -65,12 +81,19 @@ export default function Checkout() {
     const randomRider = riders[Math.floor(Math.random() * riders.length)];
     const initialEta = 30; // mins initial ETA
 
+    const activeRest = activeRestaurant || {
+      id: "navimumbai-kharghar-1",
+      name: "ITM Canteen",
+      imageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=60",
+      locality: "Kharghar"
+    };
+
     const newOrder = {
       orderId,
-      restaurantId: activeRestaurant.id,
-      restaurantName: activeRestaurant.name,
-      restaurantImageUrl: activeRestaurant.imageUrl,
-      locality: activeRestaurant.locality,
+      restaurantId: activeRest.id,
+      restaurantName: activeRest.name,
+      restaurantImageUrl: activeRest.imageUrl,
+      locality: activeRest.locality,
       date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       items: cartItems.map(item => ({
         id: item.id,
@@ -89,18 +112,20 @@ export default function Checkout() {
       riderInfo: randomRider
     };
 
+    // wait for order persistence before navigation
     // Save order in authStore OrderHistory and orderStore
     addOrder(newOrder);
     useOrderStore.getState().setActiveOrder(newOrder);
 
+    // Mark order as placed to prevent empty-cart homepage redirect
+    orderPlacedRef.current = true;
+
     setCreatedOrder(newOrder);
     setConfirmedTotal(orderFinalTotal);
-    
-    // clear cart immediately after successful payment
-    // prevent stale cart restoration on browser back
-    clearCart();
 
-    // Jump to processing stage
+    // fullscreen order processing flow — jump to processing stage FIRST
+    // DO NOT clear cart here — cart will be cleared AFTER tracking redirect
+    // remove homepage redirect after checkout by ensuring step 3 is set before any cart changes
     setCheckoutStep(3);
   };
 
@@ -111,9 +136,9 @@ export default function Checkout() {
 
   if (checkoutStep === 3) {
     return (
-      <div className="fixed inset-0 z-[1000] bg-stone-50 dark:bg-dark-bg flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+      <div className="fixed inset-0 z-[1000] bg-zinc-950 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
         <div className="w-full max-w-[420px] py-3 md:py-6">
-          <ProcessingStep orderDetails={createdOrder} orderTotal={confirmedTotal || finalTotal} />
+          <ProcessingStep orderDetails={createdOrder} orderTotal={confirmedTotal || finalTotal} onOrderComplete={clearCart} />
         </div>
       </div>
     );
@@ -228,17 +253,33 @@ export default function Checkout() {
                     <span>-{formatPrice(discount)}</span>
                   </div>
                 )}
+                {membershipDiscount > 0 && (
+                  <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                    <span>Crave PRO food discount</span>
+                    <span>-{formatPrice(membershipDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Restaurant Packaging Fee</span>
                   <span>{formatPrice(packagingCharge)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Partner Delivery Fee</span>
-                  <span>{deliveryFee === 0 ? "FREE" : formatPrice(deliveryFee)}</span>
+                  <span className="text-right max-w-[55%]">
+                    {deliveryFee > 0
+                      ? formatPrice(deliveryFee)
+                      : freeDeliveryLabel || formatPrice(0)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Platform Fee</span>
-                  <span>{formatPrice(platformFee)}</span>
+                  <span>
+                    {subtotal <= 0
+                      ? formatPrice(0)
+                      : platformFee === 0 && isMember
+                        ? 'Waived · Crave PRO'
+                        : formatPrice(platformFee)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>GST & Restaurant Charges</span>
