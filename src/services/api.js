@@ -57,11 +57,37 @@ export const fetchRestaurants = async (city, filters = {}) => {
   // Search filter
   if (filters.search) {
     const query = filters.search.toLowerCase();
-    result = result.filter(r => 
-      r.name.toLowerCase().includes(query) || 
-      r.cuisines.some(c => c.toLowerCase().includes(query)) ||
-      r.locality.toLowerCase().includes(query)
-    );
+    
+    if (query === 'healthy') {
+      result = result.filter(r => 
+        r.isPureVeg || 
+        r.isVeg || 
+        r.cuisines.some(c => {
+          const cl = c.toLowerCase();
+          return cl.includes('south indian') || cl.includes('cafe') || cl.includes('beverages');
+        })
+      );
+    } else if (query === 'burger') {
+      result = result.filter(r => 
+        r.cuisines.some(c => {
+          const cl = c.toLowerCase();
+          return cl.includes('continental') || cl.includes('cafe') || cl.includes('fast food') || cl.includes('street food');
+        })
+      );
+    } else if (query === 'thali') {
+      result = result.filter(r => 
+        r.cuisines.some(c => {
+          const cl = c.toLowerCase();
+          return cl.includes('north indian') || cl.includes('biryani') || cl.includes('south indian');
+        })
+      );
+    } else {
+      result = result.filter(r => 
+        r.name.toLowerCase().includes(query) || 
+        r.cuisines.some(c => c.toLowerCase().includes(query)) ||
+        r.locality.toLowerCase().includes(query)
+      );
+    }
   }
 
   // Veg/Nonveg filters

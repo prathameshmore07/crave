@@ -174,24 +174,104 @@ export default function Membership() {
 
   // keep existing app functionality intact — only block purchase when subscription is currently active
   if (isActive && activeMembership) {
+    const plans = getPlanOptions();
+    const planInfo = plans[activeMembership.type];
+    const estimatedSavings = useMembershipStore.getState().calculateSavingsEstimate();
+
     return (
-      <div className="max-w-lg mx-auto py-12 px-4 text-center">
-        <div className="rounded-2xl border border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-8">
-          <div className="text-4xl mb-4" aria-hidden>
-            ✓
+      <div className="max-w-2xl mx-auto py-8 px-4 space-y-8 animate-scale-up text-left">
+        {/* Hero Card */}
+        <div className="relative overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 via-amber-600/[0.02] to-transparent p-6 md:p-8 shadow-xl dark:bg-neutral-900/40">
+          {/* Ambient Glow */}
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+          
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+                ⭐ Crave PRO Member
+              </span>
+              <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                <span className="text-4xl">{planInfo?.icon || '👑'}</span>
+                {planInfo?.name || 'Active Pass'}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {planInfo?.description}
+              </p>
+            </div>
+            
+            <div className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur border border-black/[0.04] dark:border-white/[0.06] p-5 rounded-2xl text-center md:text-right shadow-sm min-w-[180px]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                Estimated Savings
+              </span>
+              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 block">
+                ₹{estimatedSavings}
+              </span>
+              <span className="text-[10px] text-gray-400 block mt-1">
+                With your Pro benefits
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            You&apos;re already a Crave PRO member
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Manage renewal, billing, and benefits from your profile.
-          </p>
+
+          <div className="grid sm:grid-cols-2 gap-4 border-t border-black/[0.05] dark:border-white/[0.05] pt-6 mt-6 relative z-10">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                Billing Cycle
+              </span>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 capitalize">
+                {activeMembership.cycle === 'halfYearly' ? 'Half-yearly' : activeMembership.cycle} Plan
+              </p>
+              <p className="text-xs text-gray-500">
+                ₹{activeMembership.price} paid via mock payment
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                Renewal Details
+              </span>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Expires on {new Date(activeMembership.expiryDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+              <p className="text-xs text-gray-500">
+                Auto-renew: {activeMembership.autoRenew ? 'Enabled' : 'Disabled'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Pro Benefits Section */}
+        <div className="bg-white dark:bg-dark-surface border border-black/[0.06] dark:border-white/[0.06] rounded-3xl p-6 md:p-8 shadow-sm">
+          <h2 className="text-lg font-black text-gray-900 dark:text-white mb-4 tracking-tight">
+            Your Premium Pro Benefits
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {planInfo?.benefits.map((benefit, i) => (
+              <div key={i} className="flex gap-3 items-start p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-900/30 transition-colors">
+                <span className="text-amber-500 font-bold text-lg shrink-0">✨</span>
+                <span className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                  {benefit}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full sm:flex-1 py-3.5 rounded-2xl bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-850 dark:hover:bg-white text-white dark:text-neutral-950 text-sm font-black uppercase tracking-wider transition-all shadow-sm focus:outline-none cursor-pointer text-center"
+          >
+            Start Exploring Food
+          </button>
+          
           <button
             type="button"
             onClick={() => navigate('/profile')}
-            className="w-full py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold transition-colors"
+            className="w-full sm:flex-1 py-3.5 rounded-2xl bg-white dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] text-gray-850 dark:text-gray-100 text-sm font-black uppercase tracking-wider transition-all hover:bg-neutral-50 dark:hover:bg-neutral-900 shadow-3xs focus:outline-none cursor-pointer text-center"
           >
-            Open profile
+            Manage subscription
           </button>
         </div>
       </div>

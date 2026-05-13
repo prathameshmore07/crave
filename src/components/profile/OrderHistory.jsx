@@ -6,7 +6,7 @@ import { useUiStore } from '../../store/uiStore';
 import { useReviewStore } from '../../store/reviewStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatPrice } from '../../utils/formatPrice';
-import { ShoppingBag, ChevronRight, CheckCircle, Compass, Star, CreditCard, MessageSquare, X, ShieldAlert, Trash2 } from 'lucide-react';
+import { ShoppingBag, ChevronRight, CheckCircle, Compass, Star, CreditCard, MessageSquare, X, ShieldAlert, Trash2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -61,6 +61,286 @@ export default function OrderHistory() {
   if (orders.length === 0 && user) {
     orders = user.orderHistory || [];
   }
+
+  // Instant PDF Receipt generator for historical orders
+  const handlePrintReceipt = (order) => {
+    if (!order) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to download your receipt.");
+      return;
+    }
+    
+    // Construct order item rows
+    const itemRows = order.items.map(item => `
+      <tr style="border-bottom: 1px solid #f3f4f6; font-size: 13px;">
+        <td style="padding: 12px 0; font-weight: 600; color: #1f2937; text-align: left;">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${item.isVeg ? '#10b981' : '#ef4444'}; margin-right: 6px;"></span>
+          ${item.name}
+          ${item.selectedCustomizations && item.selectedCustomizations.length > 0 
+            ? `<div style="font-size: 10px; color: #6b7280; font-weight: 500; margin-top: 2px; padding-left: 14px;">${item.selectedCustomizations.map(c => c.name).join(', ')}</div>` 
+            : ''}
+        </td>
+        <td style="padding: 12px 0; text-align: center; color: #4b5563;">${item.quantity}</td>
+        <td style="padding: 12px 0; text-align: right; font-family: monospace; font-weight: bold; color: #1f2937;">₹${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    // Instructions markup
+    let instructionsSection = '';
+    if (order.cookingInstructions || order.deliveryInstruction) {
+      instructionsSection = `
+        <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; text-align: left;">
+          <h3 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 10px; margin-top: 0;">Special Instructions</h3>
+          ${order.cookingInstructions ? `
+            <div style="font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              <strong style="color: #ea580c;">🍳 Chef Note:</strong> ${order.cookingInstructions}
+            </div>
+          ` : ''}
+          ${order.deliveryInstruction ? `
+            <div style="font-size: 12px; font-weight: 500; color: #374151;">
+              <strong style="color: #2563eb;">🛵 Rider Note:</strong> <span style="text-transform: capitalize;">${order.deliveryInstruction.replace('-', ' ')}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Crave Receipt - Order #${order.orderId}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <style>
+          body {
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            background-color: #ffffff;
+            color: #111827;
+            margin: 0;
+            padding: 40px;
+            -webkit-print-color-adjust: exact;
+          }
+          .invoice-card {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #f3f4f6;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+          }
+          .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px dashed #f3f4f6;
+            padding-bottom: 24px;
+            margin-bottom: 24px;
+          }
+          .brand-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff385c;
+            letter-spacing: -0.03em;
+            margin: 0;
+            text-align: left;
+          }
+          .brand-tag {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #9ca3af;
+            margin-top: 4px;
+            text-align: left;
+          }
+          .invoice-title {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #111827;
+            text-align: right;
+            margin: 0 0 8px 0;
+          }
+          .meta-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+            display: block;
+          }
+          .meta-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+            margin-top: 2px;
+          }
+          .details-grid {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+          }
+          .restaurant-box {
+            background-color: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+          }
+          .address-box {
+            background-color: #f0fdf4;
+            border: 1px solid #dcfce7;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+          }
+          .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+          }
+          .totals-table {
+            width: 100%;
+            margin-top: 16px;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 16px;
+          }
+          .totals-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-weight: 600;
+          }
+          .grand-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 900;
+            color: #111827;
+            border-top: 2px dashed #f3f4f6;
+            padding-top: 16px;
+            margin-top: 16px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            line-height: 1.6;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .invoice-card {
+              border: none;
+              box-shadow: none;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-card">
+          <div class="header-row">
+            <div>
+              <h1 class="brand-logo">CRAVE.</h1>
+              <div class="brand-tag">Premium Food Delivery</div>
+            </div>
+            <div>
+              <div class="invoice-title">Official Invoice</div>
+              <div style="text-align: right;">
+                <span class="meta-label">ORDER ID:</span>
+                <div class="meta-value" style="font-family: monospace; letter-spacing: 0.5px;">${order.orderId}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div class="restaurant-box">
+              <div class="meta-label" style="color: #b45309;">ORDERED FROM</div>
+              <div class="meta-value" style="font-size: 14px; color: #78350f; margin-top: 4px;">${order.restaurantName}</div>
+              <div style="font-size: 11px; color: #92400e; font-weight: 500; margin-top: 2px;">${order.locality || 'Crave Kitchen'}</div>
+              <div style="font-size: 11px; color: #92400e; font-weight: 600; margin-top: 8px;">Date: ${order.date}</div>
+            </div>
+            <div class="address-box">
+              <div class="meta-label" style="color: #15803d;">DELIVERED TO</div>
+              <div class="meta-value" style="font-size: 13px; color: #14532d; margin-top: 4px;">${order.deliveryAddress?.fullName || 'Valued Customer'}</div>
+              <div style="font-size: 11px; color: #166534; font-weight: 500; margin-top: 2px; line-height: 1.4;">
+                ${order.deliveryAddress?.flatNo ? `${order.deliveryAddress.flatNo}, ` : ''}
+                ${order.deliveryAddress?.area || 'Campus Address'}
+              </div>
+              <div style="font-size: 11px; color: #166534; font-weight: 600; margin-top: 8px;">Method: ${order.paymentMethod || 'UPI Payment'}</div>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr style="border-bottom: 2px solid #111827; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; text-align: left;">
+                <th style="padding-bottom: 8px;">Menu Item</th>
+                <th style="padding-bottom: 8px; text-align: center;">Qty</th>
+                <th style="padding-bottom: 8px; text-align: right;">Total Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+            </tbody>
+          </table>
+
+          <div class="totals-table">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span style="font-family: monospace;">₹${(order.totalAmount - 15).toFixed(2)}</span>
+            </div>
+            <div class="totals-row">
+              <span>Packaging & Handling Charges</span>
+              <span style="font-family: monospace;">₹15.00</span>
+            </div>
+            <div class="totals-row">
+              <span>Delivery Partner Fee</span>
+              <span style="color: #10b981;">FREE</span>
+            </div>
+            <div class="grand-total-row">
+              <span>Total Paid</span>
+              <span style="font-family: monospace; color: #ff385c;">₹${order.totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
+          ${instructionsSection}
+
+          <div class="footer">
+            Thank you for dining with Crave!<br />
+            Loved your food? Open the app to rate your delivery agent and kitchen chef.
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 300);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    toast.success("Generating your PDF Receipt...", {
+      description: "Press Print or Save to save your receipt."
+    });
+  };
 
   // Reload previous ordered items back into cart
   const handleReorder = (order) => {
@@ -372,90 +652,129 @@ export default function OrderHistory() {
                     <span className="text-sm font-black text-brand tracking-tight">{formatPrice(order.totalAmount)}</span>
                   </div>
                   
-                  {/* Action Button Groups - Organized by Order Status */}
-                  <div className="flex flex-col w-full md:w-auto gap-3">
-                    
-                    {/* REVIEW ACTIONS - Show only for delivered orders */}
-                    {isDelivered && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {hasRating ? (
-                          <>
-                            <button
-                              onClick={() => openReviewModal(order)}
-                              className="h-9 px-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all hover:scale-105 active:scale-95 shadow-sm cursor-pointer border-none outline-none flex items-center gap-1.5 flex-shrink-0"
-                            >
-                              <MessageSquare size={12} strokeWidth={2.5} />
-                              Edit Review
-                            </button>
-                            <button
-                              onClick={() => triggerDeleteReview(order)}
-                              className="h-9 w-9 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white flex items-center justify-center rounded-lg transition-all hover:scale-105 active:scale-95 cursor-pointer border-none outline-none flex-shrink-0"
-                              title="Delete Review"
-                            >
-                              <Trash2 size={13} strokeWidth={2.5} />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => openReviewModal(order)}
-                            className="h-9 px-3.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all hover:scale-105 active:scale-95 shadow-sm cursor-pointer border-none outline-none flex items-center gap-1.5 flex-shrink-0"
-                          >
-                            <MessageSquare size={12} strokeWidth={2.5} />
-                            Rate Order
-                          </button>
-                        )}
-                      </div>
-                    )}
-
+                  {/* Action Button Groups - Professional 2-Button spacious layout with text actions */}
+                  <div className="w-full md:w-auto flex-shrink-0 flex flex-col md:items-end gap-3.5">
                     {/* ACTIVE ORDER ACTIONS */}
                     {isActive && (
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => navigate(`/order/${order.orderId}/track`)}
-                          className="h-9 px-3.5 bg-brand hover:bg-brand-hover active:opacity-90 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all hover:scale-105 active:scale-95 shadow-md shadow-brand/20 cursor-pointer border-none outline-none flex items-center justify-center gap-1.5 w-full"
-                        >
-                          <Compass size={12} className="animate-spin" style={{ animationDuration: '5s' }} strokeWidth={2.5} />
-                          Track Order
-                        </button>
-                        <div className="flex gap-2">
+                      <div className="flex flex-col w-full md:w-auto gap-2.5">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                          <button
+                            onClick={() => navigate(`/order/${order.orderId}/track`)}
+                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1.5"
+                          >
+                            <Compass size={13} className="animate-spin" style={{ animationDuration: '4s' }} strokeWidth={2.5} />
+                            Track Order
+                          </button>
                           <button
                             onClick={() => toast.info("Connecting you to Support...", { description: `Order reference: ${order.orderId}` })}
-                            className="flex-1 h-9 px-2.5 border border-black/[0.08] dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-900 active:bg-gray-100 dark:active:bg-neutral-800 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer"
+                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
                           >
                             Support
                           </button>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
                           <button
                             onClick={() => toast.success("Calling delivery agent...", { description: "Rider ID: RD-9082" })}
-                            className="flex-1 h-9 px-2.5 border border-black/[0.08] dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-900 active:bg-gray-100 dark:active:bg-neutral-800 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer"
+                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
                           >
-                            Call Rider
+                            🛵 Call Rider
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* CANCELLED ORDER ACTION */}
+                    {/* CANCELLED ORDER ACTIONS */}
                     {isCancelled && (
-                      <button
-                        onClick={() => toast.info("Opening our resolution desk...", { description: `Order reference: ${order.orderId}` })}
-                        className="h-9 px-3.5 border border-red-500/30 text-red-500 bg-red-500/5 hover:bg-red-500 hover:text-white active:bg-red-600 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all cursor-pointer w-full"
-                      >
-                        Help Center
-                      </button>
+                      <div className="flex flex-col w-full md:w-auto gap-2.5">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                          <button
+                            onClick={() => navigate(`/order/${order.orderId}/track`)}
+                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleReorder(order)}
+                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1"
+                          >
+                            Reorder
+                            <ChevronRight size={13} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
+                          <button
+                            onClick={() => handlePrintReceipt(order)}
+                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
+                          >
+                            <Download size={11} /> Invoice PDF
+                          </button>
+                          <span className="text-gray-200 dark:text-gray-800">•</span>
+                          <button
+                            onClick={() => toast.info("Opening our resolution desk...", { description: `Order reference: ${order.orderId}` })}
+                            className="hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer"
+                          >
+                            Help Center
+                          </button>
+                        </div>
+                      </div>
                     )}
 
-                    {/* REORDER ACTION - Show for delivered or cancelled */}
-                    {(isDelivered || isCancelled) && (
-                      <button
-                        onClick={() => handleReorder(order)}
-                        className="h-9 px-3.5 border-2 border-brand/40 hover:border-brand bg-brand/5 hover:bg-brand text-brand hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 w-full md:w-auto"
-                      >
-                        Reorder
-                        <ChevronRight size={11} strokeWidth={3} />
-                      </button>
+                    {/* DELIVERED ORDER ACTIONS */}
+                    {isDelivered && (
+                      <div className="flex flex-col w-full md:w-auto gap-2.5">
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                          <button
+                            onClick={() => navigate(`/order/${order.orderId}/track`)}
+                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleReorder(order)}
+                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1"
+                          >
+                            Reorder
+                            <ChevronRight size={13} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
+                          <button
+                            onClick={() => handlePrintReceipt(order)}
+                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
+                          >
+                            <Download size={11} /> Invoice PDF
+                          </button>
+                          <span className="text-gray-200 dark:text-gray-800">•</span>
+                          {hasRating ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => openReviewModal(order)}
+                                className="hover:text-amber-500 transition-colors bg-transparent border-none outline-none cursor-pointer"
+                              >
+                                Edit Review
+                              </button>
+                              <span className="text-gray-200 dark:text-gray-800">|</span>
+                              <button
+                                onClick={() => triggerDeleteReview(order)}
+                                className="hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-0.5"
+                                title="Delete Review"
+                              >
+                                <Trash2 size={11} /> Delete
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => openReviewModal(order)}
+                              className="hover:text-amber-500 transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
+                            >
+                              <Star size={11} className="fill-amber-500/20 text-amber-500" /> Rate Order
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
-
                   </div>
+
                 </div>
               </div>
             </div>
@@ -534,151 +853,171 @@ export default function OrderHistory() {
                       </button>
                     </div>
 
-                    <form onSubmit={handleSubmitRating} className="space-y-4 max-h-[calc(90vh-240px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb]:dark:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
+                    <form onSubmit={handleSubmitRating} className="space-y-4 max-h-[calc(90vh-180px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb]:dark:bg-zinc-855 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
                       
-                      {/* Row 1: Overall Experience */}
-                      <div className="space-y-2 py-3 px-4 bg-zinc-50/50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100/40 dark:border-zinc-800/40">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-black uppercase tracking-wider">Overall Experience</span>
-                          <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
-                            {ratingStars} ★ {selectedEmoji}
-                          </span>
+                      {/* Section 1: Culinary & Delivery Experience (UNIFIED SHEET) */}
+                      <div className="p-5 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/60 dark:to-zinc-950/60 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] shadow-xs space-y-4">
+                        <div className="border-b border-black/[0.04] dark:border-white/[0.04] pb-2 text-left">
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-550 font-black uppercase tracking-widest block">Experience Ratings</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          {[1, 2, 3, 4, 5].map((star) => {
-                            const isFilled = hoverOverall ? star <= hoverOverall : star <= ratingStars;
-                            return (
-                              <button
-                                type="button"
-                                key={star}
-                                onClick={() => handleStarSelection(star)}
-                                onMouseEnter={() => setHoverOverall(star)}
-                                onMouseLeave={() => setHoverOverall(0)}
-                                className="focus:outline-none hover:scale-115 transition-transform bg-transparent border-none outline-none cursor-pointer"
-                              >
-                                <Star
-                                  size={24}
-                                  className={`transition-colors ${
-                                    isFilled ? 'fill-amber-400 text-amber-400' : 'text-zinc-200 dark:text-zinc-700'
-                                  }`}
-                                />
-                              </button>
-                            );
-                          })}
+
+                        {/* Overall Experience */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1">
+                          <div className="text-left">
+                            <span className="text-xs text-zinc-850 dark:text-zinc-150 font-bold">Overall Experience</span>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">How was your culinary experience in total?</p>
+                          </div>
+                          <div className="flex items-center gap-3 justify-start sm:justify-end">
+                            <div className="flex items-center gap-1.5">
+                              {[1, 2, 3, 4, 5].map((star) => {
+                                const isFilled = hoverOverall ? star <= hoverOverall : star <= ratingStars;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={star}
+                                    onClick={() => handleStarSelection(star)}
+                                    onMouseEnter={() => setHoverOverall(star)}
+                                    onMouseLeave={() => setHoverOverall(0)}
+                                    className="focus:outline-none hover:scale-125 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
+                                  >
+                                    <Star
+                                      size={22}
+                                      className={`transition-all duration-300 ${
+                                        isFilled 
+                                          ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]' 
+                                          : 'text-zinc-200 dark:text-zinc-800'
+                                      }`}
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <span className="h-8 w-8 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-lg font-bold flex items-center justify-center border border-amber-500/20 transition-all duration-300 animate-fade-in" title="Your sentiment">
+                              {selectedEmoji}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Food Quality */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1 border-t border-black/[0.02] dark:border-white/[0.02] pt-3">
+                          <div className="text-left">
+                            <span className="text-xs text-zinc-855 dark:text-zinc-150 font-bold">🍔 Food Quality</span>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">Taste, temperature, and recipe freshness</p>
+                          </div>
+                          <div className="flex items-center gap-1 justify-start sm:justify-end">
+                            {[1, 2, 3, 4, 5].map((star) => {
+                              const isFilled = hoverFood ? star <= hoverFood : star <= foodStars;
+                              return (
+                                <button
+                                  type="button"
+                                  key={star}
+                                  onClick={() => setFoodStars(star)}
+                                  onMouseEnter={() => setHoverFood(star)}
+                                  onMouseLeave={() => setHoverFood(0)}
+                                  className="focus:outline-none hover:scale-115 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
+                                >
+                                  <Star
+                                    size={16}
+                                    className={`transition-all duration-300 ${
+                                      isFilled 
+                                        ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' 
+                                        : 'text-zinc-200 dark:text-zinc-800'
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Delivery speed */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1 border-t border-black/[0.02] dark:border-white/[0.02] pt-3">
+                          <div className="text-left">
+                            <span className="text-xs text-zinc-855 dark:text-zinc-150 font-bold">🛵 Delivery Speed</span>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">Rider etiquette and delivery speed</p>
+                          </div>
+                          <div className="flex items-center gap-1 justify-start sm:justify-end">
+                            {[1, 2, 3, 4, 5].map((star) => {
+                              const isFilled = hoverDelivery ? star <= hoverDelivery : star <= deliveryStars;
+                              return (
+                                <button
+                                  type="button"
+                                  key={star}
+                                  onClick={() => setDeliveryStars(star)}
+                                  onMouseEnter={() => setHoverDelivery(star)}
+                                  onMouseLeave={() => setHoverDelivery(0)}
+                                  className="focus:outline-none hover:scale-115 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
+                                >
+                                  <Star
+                                    size={16}
+                                    className={`transition-all duration-300 ${
+                                      isFilled 
+                                        ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' 
+                                        : 'text-zinc-200 dark:text-zinc-800'
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Packaging quality */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1 border-t border-black/[0.02] dark:border-white/[0.02] pt-3">
+                          <div className="text-left">
+                            <span className="text-xs text-zinc-855 dark:text-zinc-150 font-bold">📦 Packaging Quality</span>
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold">Spill-proof, seal, and clean packing</p>
+                          </div>
+                          <div className="flex items-center gap-1 justify-start sm:justify-end">
+                            {[1, 2, 3, 4, 5].map((star) => {
+                              const isFilled = hoverPackaging ? star <= hoverPackaging : star <= packagingStars;
+                              return (
+                                <button
+                                  type="button"
+                                  key={star}
+                                  onClick={() => setPackagingStars(star)}
+                                  onMouseEnter={() => setHoverPackaging(star)}
+                                  onMouseLeave={() => setHoverPackaging(0)}
+                                  className="focus:outline-none hover:scale-115 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
+                                >
+                                  <Star
+                                    size={16}
+                                    className={`transition-all duration-300 ${
+                                      isFilled 
+                                        ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]' 
+                                        : 'text-zinc-200 dark:text-zinc-800'
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Row 2: Food Quality Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">🍔 Food Quality</span>
-                          <span className="text-[11px] text-zinc-450 font-bold">{foodStars}★</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => {
-                            const isFilled = hoverFood ? star <= hoverFood : star <= foodStars;
-                            return (
-                              <button
-                                type="button"
-                                key={star}
-                                onClick={() => setFoodStars(star)}
-                                onMouseEnter={() => setHoverFood(star)}
-                                onMouseLeave={() => setHoverFood(0)}
-                                className="focus:outline-none hover:scale-110 transition-transform bg-transparent border-none outline-none cursor-pointer"
-                              >
-                                <Star
-                                  size={18}
-                                  className={`transition-colors ${
-                                    isFilled ? 'fill-amber-400 text-amber-400' : 'text-zinc-200 dark:text-zinc-800'
-                                  }`}
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Row 3: Delivery Experience Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">🛵 Delivery Experience</span>
-                          <span className="text-[11px] text-zinc-450 font-bold">{deliveryStars}★</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => {
-                            const isFilled = hoverDelivery ? star <= hoverDelivery : star <= deliveryStars;
-                            return (
-                              <button
-                                type="button"
-                                key={star}
-                                onClick={() => setDeliveryStars(star)}
-                                onMouseEnter={() => setHoverDelivery(star)}
-                                onMouseLeave={() => setHoverDelivery(0)}
-                                className="focus:outline-none hover:scale-110 transition-transform bg-transparent border-none outline-none cursor-pointer"
-                              >
-                                <Star
-                                  size={18}
-                                  className={`transition-colors ${
-                                    isFilled ? 'fill-amber-400 text-amber-400' : 'text-zinc-200 dark:text-zinc-800'
-                                  }`}
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Row 4: Packaging Sub-rating */}
-                      <div className="space-y-1.5 py-2 px-4 bg-zinc-50/20 dark:bg-zinc-900/20 rounded-xl border border-zinc-100/10 dark:border-zinc-800/10">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-extrabold uppercase tracking-wider">📦 Packaging Quality</span>
-                          <span className="text-[11px] text-zinc-450 font-bold">{packagingStars}★</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => {
-                            const isFilled = hoverPackaging ? star <= hoverPackaging : star <= packagingStars;
-                            return (
-                              <button
-                                type="button"
-                                key={star}
-                                onClick={() => setPackagingStars(star)}
-                                onMouseEnter={() => setHoverPackaging(star)}
-                                onMouseLeave={() => setHoverPackaging(0)}
-                                className="focus:outline-none hover:scale-110 transition-transform bg-transparent border-none outline-none cursor-pointer"
-                              >
-                                <Star
-                                  size={18}
-                                  className={`transition-colors ${
-                                    isFilled ? 'fill-amber-400 text-amber-400' : 'text-zinc-200 dark:text-zinc-800'
-                                  }`}
-                                />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Row 5: Individual Dish Ratings */}
+                      {/* Section 2: Individual Dish Ratings (List style) */}
                       {activeReviewOrder.items && activeReviewOrder.items.length > 0 && (
-                        <div className="space-y-3 py-3 px-4 bg-zinc-50/50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100/40 dark:border-zinc-800/40">
-                          <span className="text-[10px] text-zinc-550 dark:text-zinc-450 font-black uppercase tracking-wider block mb-1">🍕 Rate Ordered Dishes</span>
-                          <div className="space-y-3">
+                        <div className="p-5 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/60 dark:to-zinc-950/60 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] shadow-xs space-y-3.5">
+                          <div className="border-b border-black/[0.04] dark:border-white/[0.04] pb-2 text-left">
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-550 font-black uppercase tracking-widest block">Item Feedback (Optional)</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                             {activeReviewOrder.items.map((item) => {
                               const dishImg = menuItemImages[item.name] || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80";
                               const currentDishRating = dishRatings[item.id] || 5;
                               return (
-                                <div key={item.id} className="flex items-center justify-between gap-3 bg-white dark:bg-zinc-950 p-2 rounded-lg border border-zinc-100/30 dark:border-zinc-900/40">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 rounded-md overflow-hidden bg-zinc-50 border border-zinc-200/40 flex-shrink-0">
+                                <div key={item.id} className="flex items-center justify-between gap-3 py-1.5 px-2 hover:bg-black/[0.02] dark:hover:bg-white/[0.01] rounded-xl transition-all">
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.05] flex-shrink-0">
                                       <DishImage src={dishImg} alt={item.name} dishName={item.name} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="text-left min-w-0">
-                                      <h5 className="text-[11px] font-extrabold text-zinc-800 dark:text-zinc-200 leading-tight truncate max-w-[150px]">{item.name}</h5>
-                                      <span className="text-[9px] text-zinc-400 font-semibold">{item.quantity}x • {formatPrice(item.price)}</span>
+                                      <h5 className="text-[11px] font-bold text-zinc-850 dark:text-zinc-200 leading-tight truncate max-w-[120px]">{item.name}</h5>
+                                      <span className="text-[9px] text-zinc-450 dark:text-zinc-550 font-semibold">{item.quantity}x • {formatPrice(item.price)}</span>
                                     </div>
                                   </div>
                                   
-                                  <div className="flex items-center gap-0.5">
+                                  <div className="flex items-center gap-0.5 flex-shrink-0">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                       <button
                                         type="button"
@@ -686,11 +1025,15 @@ export default function OrderHistory() {
                                         onClick={() => {
                                           setDishRatings(prev => ({ ...prev, [item.id]: star }));
                                         }}
-                                        className="focus:outline-none hover:scale-115 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
+                                        className="focus:outline-none hover:scale-120 transition-transform bg-transparent border-none outline-none cursor-pointer p-0"
                                       >
                                         <Star
-                                          size={14}
-                                          className={star <= currentDishRating ? "fill-amber-400 text-amber-400" : "text-zinc-200 dark:text-zinc-800"}
+                                          size={12}
+                                          className={`transition-all duration-300 ${
+                                            star <= currentDishRating 
+                                              ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.5)]" 
+                                              : "text-zinc-200 dark:text-zinc-850"
+                                          }`}
                                         />
                                       </button>
                                     ))}
@@ -702,59 +1045,65 @@ export default function OrderHistory() {
                         </div>
                       )}
 
-                      {/* Emoji Reactions Selection Stickers */}
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-extrabold text-zinc-450 uppercase tracking-wider block">Choose Reaction Emoji</label>
-                        <div className="flex items-center gap-2.5">
-                          {emojiStickers.map((emo) => (
-                            <button
-                              type="button"
-                              key={emo}
-                              onClick={() => setSelectedEmoji(emo)}
-                              className={`h-9 w-9 rounded-full flex items-center justify-center text-lg border transition-all hover:scale-115 cursor-pointer bg-transparent ${
-                                selectedEmoji === emo 
-                                  ? 'border-amber-400 bg-amber-500/10 scale-110' 
-                                  : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
-                              }`}
-                            >
-                              {emo}
-                            </button>
-                          ))}
+                      {/* Section 3: Emoji & Written Feedback Dual-Column Container */}
+                      <div className="p-5 bg-gradient-to-br from-zinc-50 to-zinc-100/50 dark:from-zinc-900/60 dark:to-zinc-950/60 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] shadow-xs grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* Column 1: Emoji reactions */}
+                        <div className="space-y-3.5 text-left flex flex-col justify-between">
+                          <div>
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-550 font-black uppercase tracking-widest block mb-1">Choose Reaction Emoji</span>
+                            <p className="text-[10px] text-zinc-500 dark:text-zinc-450 font-medium">Select a reaction sticker for your review badge</p>
+                          </div>
+                          <div className="grid grid-cols-8 gap-1.5 w-full pt-1">
+                            {emojiStickers.map((emo) => (
+                              <button
+                                type="button"
+                                key={emo}
+                                onClick={() => setSelectedEmoji(emo)}
+                                className={`h-8 w-8 rounded-full flex items-center justify-center text-base border transition-all duration-300 hover:scale-115 cursor-pointer bg-transparent ${
+                                  selectedEmoji === emo 
+                                    ? 'border-amber-400 bg-amber-500/10 dark:bg-amber-500/20 scale-110 shadow-md shadow-amber-500/10' 
+                                    : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50'
+                                }`}
+                              >
+                                {emo}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Comment Box and Character Counter */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-extrabold text-zinc-400 dark:text-zinc-550 uppercase tracking-wider block">Write comments/review text</label>
-                          <span className={`text-[10px] font-bold ${reviewComment.length > 450 ? 'text-brand' : 'text-zinc-400'}`}>
-                            {reviewComment.length} / 500
-                          </span>
+                        {/* Column 2: Feedback text */}
+                        <div className="space-y-2 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-550 font-black uppercase tracking-widest block">Comments / review text</span>
+                            <span className={`text-[9px] font-bold ${reviewComment.length > 450 ? 'text-brand' : 'text-zinc-400'}`}>
+                              {reviewComment.length} / 500
+                            </span>
+                          </div>
+                          <textarea
+                            rows={2}
+                            maxLength={500}
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="Brief comments on taste, delivery speed, and packaging..."
+                            className="w-full p-2.5 border border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 text-xs font-semibold rounded-xl outline-none focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all resize-none text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
+                          />
                         </div>
-                        <textarea
-                          rows={3}
-                          maxLength={500}
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          placeholder="Tell us about the recipe, delivery speed, and packing..."
-                          className="w-full p-3.5 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold rounded-xl outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-colors resize-none text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
-                        />
                       </div>
 
                       {/* Submit / Save / Delete Buttons */}
                       {activeReviewOrder.rating ? (
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 pt-2">
                           <button
                             type="button"
                             onClick={() => triggerDeleteReview(activeReviewOrder)}
-                            className="h-11 flex-1 border border-red-500/20 hover:border-red-500 bg-red-500/5 hover:bg-red-500 text-red-500 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                            className="h-10 flex-1 border border-red-500/20 hover:border-red-500 bg-red-500/5 hover:bg-red-500 text-red-500 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <Trash2 size={13} />
                             Delete Review
                           </button>
                           <button
                             type="submit"
-                            className="h-11 flex-1 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5 border-none outline-none cursor-pointer"
+                            className="h-10 flex-1 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5 border-none outline-none cursor-pointer"
                           >
                             <MessageSquare size={13} />
                             Save Changes
@@ -763,10 +1112,10 @@ export default function OrderHistory() {
                       ) : (
                         <button
                           type="submit"
-                          className="h-11 w-full bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5 border-none outline-none cursor-pointer"
+                          className="h-10 w-full bg-brand hover:bg-brand-hover text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:scale-[1.01] active:scale-99 shadow-md shadow-brand/10 flex items-center justify-center gap-1.5 border-none outline-none cursor-pointer pt-2"
                         >
                           <MessageSquare size={13} />
-                          Submit Verified Review
+                          Submit Taste Audit
                         </button>
                       )}
                     </form>

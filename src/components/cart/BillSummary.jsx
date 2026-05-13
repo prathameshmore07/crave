@@ -12,6 +12,9 @@ export default function BillSummary() {
   const tip = useCartStore((state) => state.tip);
   const isMember = useMembershipStore((state) => state.isActive());
   const memberDiscountPct = useMembershipStore((state) => (state.isActive() ? state.getDiscountPercent() : 0));
+  
+  const cookingInstructions = useCartStore((state) => state.cookingInstructions);
+  const deliveryInstruction = useCartStore((state) => state.deliveryInstruction);
 
   const { subtotal, discount, membershipDiscount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } =
     getCartTotals();
@@ -27,6 +30,7 @@ export default function BillSummary() {
 
   if (subtotal === 0) return null;
 
+  // Grand Total
   return (
     <div className="p-4 bg-gray-50/50 dark:bg-dark-bg/30 rounded-2xl border border-black/[0.04] dark:border-white/[0.04] space-y-3">
       <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04] pb-2 text-xs font-black uppercase tracking-wider text-gray-400">
@@ -140,6 +144,27 @@ export default function BillSummary() {
           {formatPrice(finalTotal)}
         </motion.span>
       </div>
+
+      {/* Persistent Instructions Block */}
+      {(cookingInstructions || deliveryInstruction) && (
+        <div className="border-t border-black/[0.05] dark:border-white/[0.05] pt-3 mt-1.5 space-y-2">
+          <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-550 block">Your Instructions</span>
+          <div className="space-y-1.5">
+            {cookingInstructions && (
+              <div className="flex items-center gap-1.5 p-2 rounded-xl bg-orange-500/[0.04] dark:bg-orange-500/[0.02] border border-orange-500/10 text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                <span className="font-extrabold text-orange-600 dark:text-orange-400 shrink-0">🍳 Chef Note:</span>
+                <span className="truncate">{cookingInstructions}</span>
+              </div>
+            )}
+            {deliveryInstruction && (
+              <div className="flex items-center gap-1.5 p-2 rounded-xl bg-blue-500/[0.04] dark:bg-blue-500/[0.02] border border-blue-500/10 text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                <span className="font-extrabold text-blue-600 dark:text-blue-400 shrink-0">🛵 Rider Note:</span>
+                <span className="capitalize">{deliveryInstruction.replace('-', ' ')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

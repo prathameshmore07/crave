@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useForm } from 'react-hook-form';
 import { MapPin, Plus, Trash2, Home, Briefcase, Check, PhoneOff, Bell, Shield, DoorOpen, Sparkles, Info, Package, BellRing, PhoneCall } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCartStore } from '../../store/cartStore';
 
 export default function AddressStep({ activeAddressId, onSelectAddress, onNext }) {
   const user = useAuthStore((state) => state.user);
@@ -60,7 +61,8 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext }
     reset();
   };
 
-  const [selectedInstruction, setSelectedInstruction] = useState("");
+  const selectedInstruction = useCartStore((state) => state.deliveryInstruction);
+  const setSelectedInstruction = useCartStore((state) => state.setDeliveryInstruction);
 
   const instructionsList = [
     { id: "avoid-call", label: "Avoid Calling", sub: "Rider will deliver silently", icon: PhoneOff },

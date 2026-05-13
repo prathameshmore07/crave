@@ -192,37 +192,37 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -30 }}
-            className="w-full max-w-[420px] mx-auto bg-zinc-950 border border-zinc-900 rounded-[24px] p-4.5 sm:p-5 space-y-4 shadow-2xl relative overflow-hidden"
+            className="w-full max-w-[390px] mx-auto bg-zinc-950 border border-zinc-900 rounded-[22px] p-3.5 sm:p-4 space-y-3 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto scrollbar-thin pr-1.5 flex flex-col"
           >
             {/* Soft Ambient Brand Gradients */}
             <div className="absolute -right-32 -top-32 w-64 h-64 bg-brand/10 rounded-full blur-[90px] pointer-events-none" />
             <div className="absolute -left-32 -bottom-32 w-64 h-64 bg-emerald-500/5 rounded-full blur-[90px] pointer-events-none" />
 
             {/* SECTION 1: SUCCESS HERO */}
-            <div className="flex flex-col items-center text-center space-y-2 pt-1 relative">
+            <div className="flex flex-col items-center text-center space-y-1.5 pt-0.5 relative">
               <div className="relative flex items-center justify-center">
                 {/* Outer pulsing ring - simplified & smaller */}
                 <motion.div 
                   initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+                  animate={{ scale: [1, 1.08, 1], opacity: [0.1, 0.15, 0.1] }}
                   transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                  className="absolute w-14 h-14 bg-emerald-500/10 rounded-full"
+                  className="absolute w-11 h-11 bg-emerald-500/10 rounded-full"
                 />
                 
-                {/* Core Check Circle - smaller w-9 h-9 */}
+                {/* Core Check Circle - smaller w-7.5 h-7.5 */}
                 <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 220, damping: 16 }}
-                  className="relative w-9 h-9 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-md shadow-emerald-500/10"
+                  className="relative w-7.5 h-7.5 rounded-full bg-emerald-500 text-black flex items-center justify-center shadow-md shadow-emerald-500/10"
                 >
                   <motion.svg 
-                    width="15" 
-                    height="15" 
+                    width="13" 
+                    height="13" 
                     viewBox="0 0 24 24" 
                     fill="none" 
                     stroke="currentColor" 
-                    strokeWidth="3.5" 
+                    strokeWidth="4" 
                     strokeLinecap="round" 
                     strokeLinejoin="round"
                   >
@@ -241,7 +241,7 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="text-lg font-black text-zinc-50 tracking-tight"
+                  className="text-base font-black text-zinc-50 tracking-tight"
                 >
                   Order Confirmed
                 </motion.h3>
@@ -249,7 +249,7 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 }}
-                  className="text-[11px] text-zinc-400 font-medium"
+                  className="text-[10px] text-zinc-400 font-medium"
                 >
                   Your meal is now being freshly prepared.
                 </motion.p>
@@ -257,29 +257,29 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
             </div>
 
             {/* SECTION 2: DELIVERY ETA PROGRESS */}
-            <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-3.5 space-y-3">
+            <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-2.5 space-y-2">
               {/* Header row with ETA and Payment Info */}
-              <div className="flex items-center justify-between text-[10px] font-bold">
+              <div className="flex items-center justify-between text-[9px] font-bold">
                 <div className="flex items-center gap-1 text-zinc-400">
-                  <Clock size={11} className="text-brand" />
+                  <Clock size={10} className="text-brand" />
                   <span>ETA: <span className="text-zinc-100 font-extrabold">{orderDetails?.ETA || 30} mins</span></span>
                 </div>
                 <div className="text-zinc-400 flex items-center gap-1">
-                  <CreditCard size={11} className="text-zinc-500" />
+                  <CreditCard size={10} className="text-zinc-500" />
                   <span>Paid via {orderDetails?.paymentMethod || "UPI"}</span>
                 </div>
               </div>
 
               {/* Linear Progress Timeline */}
-              <div className="relative pt-1 pb-0.5">
+              <div className="relative pt-0.5 pb-0.5">
                 {/* Track base */}
-                <div className="absolute top-[13px] left-[6%] right-[6%] h-[2px] bg-zinc-900 rounded-full" />
+                <div className="absolute top-[11px] left-[6%] right-[6%] h-[1.5px] bg-zinc-900 rounded-full" />
                 {/* Active progress */}
                 <motion.div 
                   initial={{ width: "0%" }}
                   animate={{ width: "38%" }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
-                  className="absolute top-[13px] left-[6%] h-[2px] bg-gradient-to-r from-emerald-500 to-brand rounded-full"
+                  className="absolute top-[11px] left-[6%] h-[1.5px] bg-gradient-to-r from-emerald-500 to-brand rounded-full"
                 />
 
                 {/* Timeline Steps */}
@@ -291,16 +291,16 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
                     { label: "Delivered", icon: "🏠", active: false, done: false }
                   ].map((step, idx) => (
                     <div key={idx} className="flex flex-col items-center text-center space-y-1">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] border transition-all ${
+                      <div className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[8px] border transition-all ${
                         step.done 
                           ? 'bg-emerald-500 border-emerald-500 text-black font-extrabold'
                           : step.pulse
                             ? 'bg-brand/15 border-brand text-brand animate-pulse'
                             : 'bg-zinc-950 border-zinc-900 text-zinc-500'
                       }`}>
-                        <span className={step.pulse ? 'scale-110' : ''}>{step.icon}</span>
+                        <span className={step.pulse ? 'scale-105' : ''}>{step.icon}</span>
                       </div>
-                      <span className={`text-[8px] font-bold uppercase tracking-wider ${
+                      <span className={`text-[7.5px] font-bold uppercase tracking-wider ${
                         step.active ? 'text-zinc-300' : 'text-zinc-500'
                       }`}>
                         {step.label}
@@ -314,31 +314,31 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
             {/* SECTION 3: ORDER SUMMARY CARD */}
             <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl overflow-hidden divide-y divide-zinc-900/50">
               {/* Summary Card Header - compacted */}
-              <div className="p-3 flex items-center justify-between">
+              <div className="p-2.5 flex items-center justify-between">
                 <div className="min-w-0">
-                  <span className="text-[8px] text-zinc-550 font-extrabold uppercase tracking-wider block">Kitchen Partner</span>
-                  <h4 className="text-xs font-bold text-zinc-200 truncate">
+                  <span className="text-[7.5px] text-zinc-550 font-extrabold uppercase tracking-wider block">Kitchen Partner</span>
+                  <h4 className="text-[11px] font-bold text-zinc-200 truncate">
                     {orderDetails?.restaurantName || "CRAVE Culinary Studio"}
                   </h4>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <span className="text-[8px] text-zinc-550 font-extrabold uppercase tracking-wider block">Order Code</span>
+                  <span className="text-[7.5px] text-zinc-550 font-extrabold uppercase tracking-wider block">Order Code</span>
                   <button 
                     onClick={copyOrderId}
-                    className="text-[9px] font-mono font-bold text-brand hover:text-brand-hover flex items-center gap-1 ml-auto focus:outline-none"
+                    className="text-[8.5px] font-mono font-bold text-brand hover:text-brand-hover flex items-center gap-1 ml-auto focus:outline-none"
                     title="Copy Order ID"
                   >
-                    {orderDetails?.orderId || "CRV-ORDER"} <Copy size={8} className="text-zinc-500" />
+                    {orderDetails?.orderId || "CRV-ORDER"} <Copy size={7.5} className="text-zinc-500" />
                   </button>
                 </div>
               </div>
 
               {/* Ordered Items List - highly compacted */}
-              <div className="p-3 space-y-2 max-h-[120px] overflow-y-auto divide-y divide-zinc-950/20">
+              <div className="p-2.5 space-y-1.5 max-h-[72px] overflow-y-auto divide-y divide-zinc-950/20">
                 {orderDetails?.items?.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="flex justify-between items-center gap-2 pt-2 first:pt-0">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-900 flex-shrink-0">
+                  <div key={`${item.id}-${index}`} className="flex justify-between items-center gap-2 pt-1.5 first:pt-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded-lg overflow-hidden border border-zinc-900 flex-shrink-0">
                         <img 
                           src={getItemImage(item.name)} 
                           alt={item.name} 
@@ -350,22 +350,22 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1">
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.isVeg ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                          <p className="text-xs font-bold text-zinc-200 truncate">{item.name}</p>
+                          <span className={`w-1.2 h-1.2 rounded-full shrink-0 ${item.isVeg ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                          <p className="text-[11px] font-bold text-zinc-200 truncate">{item.name}</p>
                         </div>
                         {item.selectedCustomizations && item.selectedCustomizations.length > 0 && (
-                          <p className="text-[9px] text-zinc-500 font-semibold truncate mt-0.5">
+                          <p className="text-[8.5px] text-zinc-500 font-semibold truncate mt-0.5">
                             {item.selectedCustomizations.map(c => c.name || c.label).join(', ')}
                           </p>
                         )}
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-[9px] font-bold bg-zinc-950 border border-zinc-900 text-zinc-400 px-1.5 py-0.5 rounded-md">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[8.5px] font-bold bg-zinc-950 border border-zinc-900 text-zinc-400 px-1.2 py-0.2 rounded-md">
                         × {item.quantity}
                       </span>
-                      <span className="font-mono text-xs font-bold text-zinc-300">
+                      <span className="font-mono text-[11px] font-bold text-zinc-300">
                         {formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
@@ -374,23 +374,23 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
               </div>
 
               {/* Pricing breakdown inside Card - compacted */}
-              <div className="p-3 bg-zinc-950/20 text-[10.5px] space-y-2 font-semibold text-zinc-450">
+              <div className="p-2.5 bg-zinc-950/20 text-[10px] space-y-1.5 font-semibold text-zinc-450">
                 <div className="flex justify-between items-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-550">Items Subtotal</span>
+                  <span className="text-[7.5px] font-bold uppercase tracking-wider text-zinc-550">Items Subtotal</span>
                   <span className="font-mono text-zinc-350">{formatPrice(subtotal)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between items-center text-emerald-400">
-                    <span className="text-[8px] font-bold uppercase tracking-wider">Applied Coupon</span>
+                    <span className="text-[7.5px] font-bold uppercase tracking-wider">Applied Coupon</span>
                     <span className="font-mono">- {formatPrice(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center text-zinc-550">
-                  <span className="text-[8px] font-bold uppercase tracking-wider">Fees & Taxes</span>
+                  <span className="text-[7.5px] font-bold uppercase tracking-wider">Fees & Taxes</span>
                   <span className="font-mono text-zinc-450">{formatPrice(gst + platformFee + packagingCharge)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t border-zinc-900 font-black text-zinc-100">
-                  <span className="text-[9px] font-bold uppercase tracking-wider">Amount Paid</span>
+                <div className="flex justify-between items-center pt-1.5 border-t border-zinc-900 font-black text-zinc-100">
+                  <span className="text-[8px] font-bold uppercase tracking-wider">Amount Paid</span>
                   <span className="font-mono text-brand text-xs">{formatPrice(orderTotal)}</span>
                 </div>
               </div>
@@ -398,14 +398,14 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
 
             {/* SECTION 3.5: DELIVERY ADDRESS (Premium Compact Row) */}
             {orderDetails?.deliveryAddress && (
-              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-3 flex items-start gap-3 text-left">
-                <MapPin size={16} className="text-brand shrink-0 mt-0.5" />
+              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-2.5 flex items-start gap-2.5 text-left">
+                <MapPin size={14} className="text-brand shrink-0 mt-0.5" />
                 <div className="min-w-0">
-                  <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-wider block">Delivery Address</span>
-                  <p className="text-xs font-bold text-zinc-200 truncate">
+                  <span className="text-[7.5px] text-zinc-550 font-bold uppercase tracking-wider block">Delivery Address</span>
+                  <p className="text-[11px] font-bold text-zinc-200 truncate">
                     {orderDetails.deliveryAddress.name} ({orderDetails.deliveryAddress.type || "Home"})
                   </p>
-                  <p className="text-[10px] text-zinc-400 font-medium truncate mt-0.5">
+                  <p className="text-[9.5px] text-zinc-400 font-medium truncate mt-0.5">
                     {orderDetails.deliveryAddress.flat}, {orderDetails.deliveryAddress.landmark}, {orderDetails.deliveryAddress.area}
                   </p>
                 </div>
@@ -414,33 +414,33 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
 
             {/* SECTION 4: ASSIGNED RIDER CARD (Premium Compact Row) */}
             {orderDetails?.riderInfo && (
-              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-2.5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
+              <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-2 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2 min-w-0">
                   {/* Rider Avatar with Soft Pulse Indicator */}
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-zinc-950 border border-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      <span className="text-xs font-bold text-brand uppercase">{orderDetails.riderInfo.name?.[0] || 'R'}</span>
+                    <div className="w-7 h-7 rounded-full bg-zinc-950 border border-zinc-900 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <span className="text-[11px] font-bold text-brand uppercase">{orderDetails.riderInfo.name?.[0] || 'R'}</span>
                     </div>
-                    <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-zinc-950 animate-pulse" />
+                    <span className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-emerald-500 rounded-full border border-zinc-950 animate-pulse" />
                   </div>
                   
                   <div className="min-w-0 text-left">
-                    <span className="text-[8px] text-zinc-550 font-bold uppercase tracking-wider block">Your Delivery Captain</span>
-                    <span className="text-xs font-bold text-zinc-200 block truncate">
+                    <span className="text-[7.5px] text-zinc-550 font-bold uppercase tracking-wider block">Your Delivery Captain</span>
+                    <span className="text-[11px] font-bold text-zinc-200 block truncate leading-tight">
                       {orderDetails.riderInfo.name}
                     </span>
-                    <span className="text-[8px] text-zinc-400 font-medium block">
+                    <span className="text-[7.5px] text-zinc-400 font-medium block leading-none">
                       ⚡ EV Captain • ETA 18 mins
                     </span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-amber-400 bg-amber-400/5 border border-amber-400/10 px-1.5 py-0.5 rounded-md">
-                    <Star size={9} className="fill-amber-400 text-amber-400 animate-pulse" />
+                <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 text-[8.5px] font-bold text-amber-400 bg-amber-400/5 border border-amber-400/10 px-1.2 py-0.2 rounded-md">
+                    <Star size={8} className="fill-amber-400 text-amber-400 animate-pulse" />
                     <span>{orderDetails.riderInfo.rating || '4.9'}</span>
                   </div>
-                  <span className="text-[8px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[7.5px] font-bold text-emerald-400 bg-emerald-500/10 px-1.2 py-0.2 rounded-full uppercase tracking-wider">
                     Verified
                   </span>
                 </div>
@@ -448,29 +448,29 @@ export default function ProcessingStep({ orderDetails, orderTotal, onOrderComple
             )}
 
             {/* SECTION 5: PRIMARY CTA & SECONDARY ACTIONS */}
-            <div className="space-y-3 pt-1 relative z-10">
+            <div className="space-y-2.5 pt-0.5 relative z-10">
               <button
                 onClick={handleTrackClick}
-                className="h-10 w-full bg-brand hover:bg-brand/90 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-brand/5 cursor-pointer flex items-center justify-center gap-1.5 hover:scale-[1.01] active:scale-[0.99] outline-none border-none"
+                className="h-9 w-full bg-brand hover:bg-brand/90 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-brand/5 cursor-pointer flex items-center justify-center gap-1 hover:scale-[1.01] active:scale-[0.99] outline-none border-none"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping shrink-0" />
+                <span className="w-1.2 h-1.2 rounded-full bg-white animate-ping shrink-0" />
                 Track Live Order
-                <ArrowRight size={13} strokeWidth={2.5} />
+                <ArrowRight size={11} strokeWidth={3} />
               </button>
 
-              <div className="flex items-center justify-center gap-4 text-[9px] font-bold uppercase tracking-widest text-zinc-500 pt-0.5">
+              <div className="flex items-center justify-center gap-3.5 text-[8.5px] font-bold uppercase tracking-widest text-zinc-500 pt-0.5">
                 <button
                   onClick={() => setShowReceipt(true)}
                   className="hover:text-brand transition-colors cursor-pointer outline-none bg-transparent flex items-center gap-1 focus:outline-none border-none"
                 >
-                  <Receipt size={12} /> View Digital Invoice
+                  <Receipt size={10} /> View Digital Invoice
                 </button>
                 <span className="text-zinc-800">|</span>
                 <button
                   onClick={handleContinueOrdering}
                   className="hover:text-brand transition-colors cursor-pointer outline-none bg-transparent flex items-center gap-1 focus:outline-none border-none"
                 >
-                  <Home size={11} /> Back to Hub
+                  <Home size={10} /> Back to Hub
                 </button>
               </div>
             </div>

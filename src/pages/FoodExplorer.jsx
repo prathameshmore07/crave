@@ -21,7 +21,10 @@ const EXPLORER_DECK = [
     popularityTag: "Hostel Legend",
     funDescription: "Golden crispy crepe stuffed with spiced potato mash and served with dollops of ghee. Fueling engineering sessions since 2012.",
     imageUrl: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=60",
-    isVeg: true
+    isVeg: true,
+    calories: 380,
+    protein: "8g",
+    carbs: "54g"
   },
   {
     id: "exp-2",
@@ -35,7 +38,10 @@ const EXPLORER_DECK = [
     popularityTag: "Sunday Special",
     funDescription: "Juicy tandoori chicken chunks cooked in a rich, velvety tomato-butter gravy with fresh cream. The ultimate comfort reward.",
     imageUrl: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400&auto=format&fit=crop&q=60",
-    isVeg: false
+    isVeg: false,
+    calories: 620,
+    protein: "34g",
+    carbs: "12g"
   },
   {
     id: "exp-3",
@@ -49,7 +55,10 @@ const EXPLORER_DECK = [
     popularityTag: "Exam Fuel",
     funDescription: "Fudgy warm chocolate brownie topped with chocolate chips. Guaranteed to release instant endorphins before that tough viva.",
     imageUrl: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop&q=60",
-    isVeg: true
+    isVeg: true,
+    calories: 450,
+    protein: "6g",
+    carbs: "58g"
   },
   {
     id: "exp-4",
@@ -63,7 +72,10 @@ const EXPLORER_DECK = [
     popularityTag: "Midnight Craving",
     funDescription: "Laden with local premium mozzarella, fresh basil, and an oozing cheese core that pulls for miles. Sharing highly discouraged.",
     imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60",
-    isVeg: true
+    isVeg: true,
+    calories: 780,
+    protein: "28g",
+    carbs: "68g"
   },
   {
     id: "exp-5",
@@ -77,7 +89,10 @@ const EXPLORER_DECK = [
     popularityTag: "Surprisingly Good",
     funDescription: "Skin-on potatoes salted to perfection and crisp as gold. Pairs beautifully with any academic procrastination routine.",
     imageUrl: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=60",
-    isVeg: true
+    isVeg: true,
+    calories: 310,
+    protein: "4g",
+    carbs: "41g"
   },
   {
     id: "exp-6",
@@ -91,7 +106,10 @@ const EXPLORER_DECK = [
     popularityTag: "Messy but Worth It",
     funDescription: "Fragrant basmati rice layered with succulent chicken pieces, fried onions, saffron, and slow dum-cooked to absolute royalty.",
     imageUrl: "https://static.toiimg.com/thumb/54308405.cms?imgsize=510571&width=800&height=800",
-    isVeg: false
+    isVeg: false,
+    calories: 680,
+    protein: "26g",
+    carbs: "75g"
   },
   {
     id: "exp-7",
@@ -105,7 +123,10 @@ const EXPLORER_DECK = [
     popularityTag: "Student Favorite",
     funDescription: "Crispy flaky paratha wrapped tightly around charred, spiced paneer cubes, crunchy green peppers, and tang zesty mint chutney.",
     imageUrl: "https://www.indianhealthyrecipes.com/wp-content/uploads/2023/02/paneer-biryani-recipe.jpg",
-    isVeg: true
+    isVeg: true,
+    calories: 420,
+    protein: "14g",
+    carbs: "45g"
   }
 ];
 
@@ -156,7 +177,7 @@ function SwipeCard({ item, onSwipeLeft, onSwipeRight, active }) {
       </motion.div>
 
       {/* Hero Image */}
-      <div className="relative h-[55%] w-full bg-neutral-100 dark:bg-neutral-800">
+      <div className="relative h-[43%] w-full bg-neutral-100 dark:bg-neutral-800">
         <DishImage
           src={item.imageUrl}
           alt={item.name}
@@ -183,44 +204,63 @@ function SwipeCard({ item, onSwipeLeft, onSwipeRight, active }) {
       </div>
 
       {/* Details Area */}
-      <div className="p-6 h-[45%] flex flex-col justify-between">
-        <div className="space-y-1.5">
+      <div className="p-6 pb-8 h-[57%] flex flex-col justify-between">
+        <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h2 className="text-xl font-extrabold text-neutral-850 dark:text-neutral-100 leading-tight tracking-tight">
+              <h2 className="text-2xl font-black text-neutral-850 dark:text-neutral-100 leading-tight tracking-tight">
                 {item.name}
               </h2>
-              <p className="text-xs text-brand font-black tracking-wide leading-none mt-1">
+              <p className="text-sm text-brand font-black tracking-wide leading-none mt-1.5">
                 by {item.restaurant}
               </p>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-lg font-black text-neutral-900 dark:text-neutral-50 block leading-none">
+              <span className="text-xl font-black text-neutral-900 dark:text-neutral-50 block leading-none">
                 {formatPrice(item.price)}
               </span>
-              <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md font-bold mt-1 inline-block">
+              <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md font-bold mt-1.5 inline-block">
                 ★ {item.rating.toFixed(1)}
               </span>
             </div>
           </div>
 
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed font-normal line-clamp-3 pt-1">
+          {/* Nutritional Info Inline Capsules */}
+          {item.calories && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-rose-200/10 shadow-3xs">
+                <Flame size={12} className="fill-rose-500 text-rose-500" /> {item.calories} kcal
+              </span>
+              {item.protein && (
+                <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-emerald-200/10 shadow-3xs">
+                  💪 {item.protein} Protein
+                </span>
+              )}
+              {item.carbs && (
+                <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-blue-200/10 shadow-3xs">
+                  🍞 {item.carbs} Carbs
+                </span>
+              )}
+            </div>
+          )}
+
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed font-normal line-clamp-3 pt-1">
             {item.funDescription}
           </p>
         </div>
 
         {/* Info Grid footer with professional icon replacement */}
-        <div className="flex items-center gap-2 border-t border-black/[0.05] dark:border-white/[0.05] pt-3.5 mt-auto">
-          <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Spice Level:</span>
+        <div className="flex items-center gap-2 border-t border-black/[0.05] dark:border-white/[0.05] pt-4 mt-auto">
+          <span className="text-xs font-black uppercase tracking-wider text-neutral-400">Spice Level:</span>
           <div className="flex items-center gap-0.5">
             {item.spiceLevel > 0 ? (
               <div className="flex items-center gap-0.5">
                 {Array.from({ length: item.spiceLevel }).map((_, i) => (
-                  <Flame key={i} size={11} className="fill-brand text-brand" />
+                  <Flame key={i} size={13} className="fill-brand text-brand" />
                 ))}
               </div>
             ) : (
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold">Mild</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-bold">Mild</span>
             )}
           </div>
         </div>
@@ -315,21 +355,21 @@ export default function FoodExplorer() {
   };
 
   return (
-    <div className="max-w-md mx-auto py-6 px-4 space-y-8 flex flex-col justify-center min-h-[calc(100vh-180px)]">
+    <div className="max-w-xl mx-auto py-2 px-4 space-y-6 flex flex-col justify-center">
       
       {/* Page Title Header */}
-      <div className="text-center space-y-1 select-none">
-        <h1 className="text-2xl font-black tracking-tight text-neutral-850 dark:text-neutral-50 flex items-center justify-center gap-1.5">
-          <Flame size={22} className="text-brand fill-brand animate-pulse" />
+      <div className="text-center space-y-2 select-none">
+        <h1 className="text-3xl font-black tracking-tight text-neutral-850 dark:text-neutral-50 flex items-center justify-center gap-2">
+          <Flame size={28} className="text-brand fill-brand animate-pulse" />
           Food Explorer
         </h1>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">
           Quickly swipe right to save, left to skip, or crave to cart!
         </p>
       </div>
 
       {/* Floating Reaction Canvas */}
-      <div className="relative w-full h-[400px] flex items-center justify-center select-none">
+      <div className="relative w-full h-[520px] flex items-center justify-center select-none">
         {/* Animated bursts overlay with professional icon replacement */}
         <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
           <AnimatePresence>
@@ -351,13 +391,13 @@ export default function FoodExplorer() {
         </div>
 
         {/* Stack of Swipeable Cards */}
-        <div className="relative w-[320px] h-[400px]">
+        <div className="relative w-[380px] h-[520px]">
           <AnimatePresence mode="popLayout">
             {index < deck.length ? (
               <div className="absolute inset-0 w-full h-full">
                 {index + 1 < deck.length && (
                   <div className="absolute inset-0 w-full h-full bg-white dark:bg-neutral-900 rounded-3xl border border-black/[0.04] dark:border-white/[0.04] opacity-50 scale-[0.96] translate-y-3 shadow-md pointer-events-none z-0 overflow-hidden">
-                    <div className="h-[55%] w-full bg-neutral-100 dark:bg-neutral-800" />
+                    <div className="h-[43%] w-full bg-neutral-100 dark:bg-neutral-800" />
                   </div>
                 )}
                 
@@ -400,32 +440,32 @@ export default function FoodExplorer() {
 
       {/* Manual Swiping Buttons Drawer */}
       {index < deck.length && (
-        <div className="flex items-center justify-center gap-6 pt-2 select-none">
+        <div className="flex items-center justify-center gap-8 pt-4 select-none">
           {/* 1. Skip Button */}
           <button
             onClick={() => handleSwipeLeft(currentItem)}
-            className="w-12 h-12 rounded-full bg-white dark:bg-neutral-900 border border-black/[0.05] dark:border-white/[0.05] text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-md flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
+            className="w-14 h-14 rounded-full bg-white dark:bg-neutral-900 border border-black/[0.05] dark:border-white/[0.05] text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-md flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
             title="Skip (Swipe Left)"
           >
-            <X size={20} strokeWidth={3} />
+            <X size={22} strokeWidth={3} />
           </button>
 
           {/* 2. Crave / Add to Cart Button */}
           <button
             onClick={() => handleCraveAdd(currentItem)}
-            className="w-16 h-16 rounded-full bg-brand hover:bg-brand-hover text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
+            className="w-20 h-20 rounded-full bg-brand hover:bg-brand-hover text-white shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
             title="Add to Cart (Crave)"
           >
-            <Flame size={28} className="fill-white" />
+            <Flame size={36} className="fill-white" />
           </button>
 
           {/* 3. Save Button */}
           <button
             onClick={() => handleSwipeRight(currentItem)}
-            className="w-12 h-12 rounded-full bg-white dark:bg-neutral-900 border border-black/[0.05] dark:border-white/[0.05] text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 shadow-md flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
+            className="w-14 h-14 rounded-full bg-white dark:bg-neutral-900 border border-black/[0.05] dark:border-white/[0.05] text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 shadow-md flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer focus:outline-none"
             title="Save (Swipe Right)"
           >
-            <Heart size={20} strokeWidth={3} className="fill-emerald-500" />
+            <Heart size={22} strokeWidth={3} className="fill-emerald-500" />
           </button>
         </div>
       )}

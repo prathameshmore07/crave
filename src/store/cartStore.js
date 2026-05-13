@@ -16,12 +16,28 @@ export const useCartStore = create((set, get) => {
   const restaurant = getUserJsonItem('cart_restaurant', null);
   const tip = Number(getUserItem('cart_tip', '0'));
   const appliedCoupon = getUserJsonItem('cart_coupon', null);
+  const cookingInstructions = getUserItem('cart_cooking_instructions', '');
+  const deliveryInstruction = getUserItem('cart_delivery_instruction', '');
 
   return {
     items,
     restaurant,
     tip,
     appliedCoupon,
+    cookingInstructions,
+    deliveryInstruction,
+    setCookingInstructions: (notes) => {
+      setUserItem('cart_cooking_instructions', notes);
+      set({ cookingInstructions: notes });
+    },
+    setDeliveryInstruction: (ins) => {
+      setUserItem('cart_delivery_instruction', ins);
+      set({ deliveryInstruction: ins });
+    },
+    friends: [
+      { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
+    ],
+    setFriends: (friendsList) => set({ friends: friendsList }),
     
     // Interceptor Modal State
     pendingItem: null,
@@ -35,6 +51,11 @@ export const useCartStore = create((set, get) => {
         restaurant: getUserJsonItem('cart_restaurant', null),
         tip: Number(getUserItem('cart_tip', '0')),
         appliedCoupon: getUserJsonItem('cart_coupon', null),
+        cookingInstructions: getUserItem('cart_cooking_instructions', ''),
+        deliveryInstruction: getUserItem('cart_delivery_instruction', ''),
+        friends: [
+          { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
+        ],
         pendingItem: null,
         pendingRestaurant: null,
         showReplaceModal: false
@@ -161,11 +182,15 @@ export const useCartStore = create((set, get) => {
           removeUserItem('cart_coupon');
           removeUserItem('cart_tip');
           removeUserItem('cart_items');
+          removeUserItem('cart_cooking_instructions');
+          removeUserItem('cart_delivery_instruction');
           return {
             items: [],
             restaurant: null,
             tip: 0,
-            appliedCoupon: null
+            appliedCoupon: null,
+            cookingInstructions: '',
+            deliveryInstruction: ''
           };
         }
 
@@ -204,11 +229,15 @@ export const useCartStore = create((set, get) => {
           removeUserItem('cart_coupon');
           removeUserItem('cart_tip');
           removeUserItem('cart_items');
+          removeUserItem('cart_cooking_instructions');
+          removeUserItem('cart_delivery_instruction');
           return {
             items: [],
             restaurant: null,
             tip: 0,
-            appliedCoupon: null
+            appliedCoupon: null,
+            cookingInstructions: '',
+            deliveryInstruction: ''
           };
         }
 
@@ -222,11 +251,18 @@ export const useCartStore = create((set, get) => {
       removeUserItem('cart_restaurant');
       removeUserItem('cart_coupon');
       removeUserItem('cart_tip');
+      removeUserItem('cart_cooking_instructions');
+      removeUserItem('cart_delivery_instruction');
       set({
         items: [],
         restaurant: null,
         tip: 0,
-        appliedCoupon: null
+        appliedCoupon: null,
+        cookingInstructions: '',
+        deliveryInstruction: '',
+        friends: [
+          { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
+        ]
       });
     },
 

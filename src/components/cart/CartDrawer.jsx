@@ -29,6 +29,7 @@ export default function CartDrawer() {
   const activeRestaurant = useCartStore((state) => state.restaurant);
   const addItem = useCartStore((state) => state.addItem);
   const getCartTotals = useCartStore((state) => state.getCartTotals);
+  const cookingInstructions = useCartStore((state) => state.cookingInstructions);
 
   const { finalTotal } = getCartTotals();
   const isMemberActive = useMembershipStore((state) => state.isActive());
@@ -115,6 +116,8 @@ export default function CartDrawer() {
                     <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Cooking Instructions</span>
                   </div>
                   <textarea
+                    value={cookingInstructions || ""}
+                    onChange={(e) => useCartStore.getState().setCookingInstructions(e.target.value)}
                     placeholder="Any kitchen notes? (e.g., Make it extra spicy, avoid onions, no cutlery needed)"
                     className="w-full min-h-[54px] bg-gray-55 dark:bg-dark-bg/30 border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-3 text-xs text-gray-755 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand resize-none font-medium"
                     maxLength={150}

@@ -7,15 +7,10 @@ import { toast } from 'sonner';
 import { getAvatarInitials, getAvatarGradient } from '../checkout/CheckoutBillSplitter';
 
 export default function BillSplitter({ onClose }) {
-  const { items: cartItems, getCartTotals, restaurant } = useCartStore();
+  const { items: cartItems, getCartTotals, restaurant, friends, setFriends } = useCartStore();
 
   // Active Splits Mode: 'equal' | 'item'
   const [splitMode, setSplitMode] = useState('equal');
-  
-  // List of active friends to split with - seeded with You dynamically
-  const [friends, setFriends] = useState([
-    { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
-  ]);
   const [newFriendName, setNewFriendName] = useState('');
 
   // Item assignment mapping: { [cartItemId]: friendId }
@@ -54,7 +49,7 @@ export default function BillSplitter({ onClose }) {
     const newFriend = {
       id: `f-${Date.now()}`,
       name: name,
-      avatarGradient: getAvatarGradient(name),
+      avatarGradient: getAvatarGradient(name, friends.length),
       initials: getAvatarInitials(name)
     };
 

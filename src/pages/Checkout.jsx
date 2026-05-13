@@ -33,6 +33,9 @@ export default function Checkout() {
 
   const appliedCoupon = useCartStore((state) => state.appliedCoupon);
   const isMember = useMembershipStore((state) => state.isActive());
+  
+  const cookingInstructions = useCartStore((state) => state.cookingInstructions);
+  const deliveryInstruction = useCartStore((state) => state.deliveryInstruction);
 
   const { subtotal, discount, membershipDiscount, deliveryFee, gst, platformFee, packagingCharge, finalTotal } = getCartTotals();
 
@@ -109,7 +112,9 @@ export default function Checkout() {
       timestamp: Date.now(),
       orderStatus: "Order Confirmed",
       ETA: initialEta,
-      riderInfo: randomRider
+      riderInfo: randomRider,
+      cookingInstructions: useCartStore.getState().cookingInstructions,
+      deliveryInstruction: useCartStore.getState().deliveryInstruction
     };
 
     // wait for order persistence before navigation
@@ -294,6 +299,27 @@ export default function Checkout() {
                   {formatPrice(finalTotal)}
                 </span>
               </div>
+
+              {/* Checkout Instructions Summary */}
+              {(cookingInstructions || deliveryInstruction) && (
+                <div className="border-t border-black/[0.04] pt-3 space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-550 block">Your Instructions</span>
+                  <div className="space-y-1.5">
+                    {cookingInstructions && (
+                      <div className="flex items-center gap-1.5 p-2 rounded-xl bg-orange-500/[0.04] dark:bg-orange-500/[0.02] border border-orange-500/10 text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        <span className="font-extrabold text-orange-600 dark:text-orange-400 shrink-0">🍳 Chef Note:</span>
+                        <span className="truncate">{cookingInstructions}</span>
+                      </div>
+                    )}
+                    {deliveryInstruction && (
+                      <div className="flex items-center gap-1.5 p-2 rounded-xl bg-blue-500/[0.04] dark:bg-blue-500/[0.02] border border-blue-500/10 text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400 shrink-0">🛵 Rider Note:</span>
+                        <span className="capitalize">{deliveryInstruction.replace('-', ' ')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Natural Collapsible Bill Splitter */}

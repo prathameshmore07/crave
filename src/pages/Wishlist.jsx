@@ -192,7 +192,7 @@ export default function Wishlist() {
                 <div className="flex items-center gap-2 pt-4 border-t border-black/[0.03] dark:border-white/[0.03] mt-4">
                   <button
                     onClick={(e) => handleRemoveDish(dish.id, e)}
-                    className="h-10 px-3 bg-gray-50 dark:bg-neutral-850 hover:bg-red-50 dark:hover:bg-red-950/20 text-gray-400 hover:text-red-500 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-black/[0.03] dark:border-white/[0.03]"
+                    className="h-10 px-3.5 bg-rose-50 dark:bg-rose-950/30 text-rose-500 hover:bg-rose-500 hover:text-white dark:text-rose-400 dark:hover:bg-rose-600 dark:hover:text-white rounded-xl transition-all flex items-center justify-center cursor-pointer border border-rose-100 dark:border-rose-950/40"
                     title="Remove from Wishlist"
                   >
                     <Trash2 size={13} />

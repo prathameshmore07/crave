@@ -16,16 +16,24 @@ export function getAvatarInitials(name) {
 }
 
 // Gradient hash helper
-export function getAvatarGradient(name) {
+export function getAvatarGradient(name, indexOffset = 0) {
   const gradients = [
-    "from-pink-500 to-rose-500",
-    "from-purple-500 to-indigo-500",
-    "from-blue-500 to-cyan-500",
-    "from-emerald-500 to-teal-500",
-    "from-amber-500 to-orange-500",
-    "from-violet-500 to-fuchsia-500",
-    "from-sky-500 to-blue-600"
+    "from-pink-500 to-rose-500",       // index 0
+    "from-purple-500 to-indigo-500",   // index 1
+    "from-blue-500 to-cyan-500",       // index 2
+    "from-emerald-500 to-teal-500",    // index 3
+    "from-violet-500 to-fuchsia-500",  // index 4
+    "from-sky-500 to-blue-600",        // index 5
+    "from-amber-500 to-orange-500"     // index 6
   ];
+  
+  if (typeof indexOffset === 'number' && indexOffset > 0) {
+    // Exclude orange (last element) from sequential additions to keep "You" (orange) distinct
+    const nonOrangeCount = gradients.length - 1;
+    const index = (indexOffset - 1) % nonOrangeCount;
+    return gradients[index];
+  }
+
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -35,14 +43,10 @@ export function getAvatarGradient(name) {
 }
 
 export default function CheckoutBillSplitter() {
-  const { items: cartItems, getCartTotals, restaurant } = useCartStore();
+  const { items: cartItems, getCartTotals, restaurant, friends, setFriends } = useCartStore();
   const [isOpen, setIsOpen] = useState(false);
   const [splitMode, setSplitMode] = useState('equal');
   
-  // Start with just "You" in the split pool - no hardcoded Prathamesh/Daksh!
-  const [friends, setFriends] = useState([
-    { id: 'you', name: 'You', avatarGradient: 'from-orange-500 to-amber-500', initials: 'YO' }
-  ]);
   const [newFriendName, setNewFriendName] = useState('');
   const [assignments, setAssignments] = useState({});
 
@@ -80,7 +84,7 @@ export default function CheckoutBillSplitter() {
     const newFriend = {
       id: `f-${Date.now()}`,
       name: name,
-      avatarGradient: getAvatarGradient(name),
+      avatarGradient: getAvatarGradient(name, friends.length),
       initials: getAvatarInitials(name)
     };
     setFriends([...friends, newFriend]);

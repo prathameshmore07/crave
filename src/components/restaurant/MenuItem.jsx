@@ -5,11 +5,14 @@ import { Plus, Minus, Star, Heart, Sparkles, Award, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import DishImage from '../common/DishImage';
+import { getNutritionData } from '../../utils/nutrition';
 
 export default function MenuItem({ item, restaurant, onOpenCustomize }) {
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
   const removeItem = useCartStore((state) => state.removeItem);
+
+  const nutrition = getNutritionData(item);
 
   // Find quantity of this item in the cart
   const cartItemInstances = cartItems.filter(i => i.id === item.id);
@@ -138,6 +141,21 @@ export default function MenuItem({ item, restaurant, onOpenCustomize }) {
             )}
           </div>
         </div>
+
+        {/* Nutritional Info Inline Capsules */}
+        {nutrition && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            <span className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-rose-200/10 shadow-3xs">
+              <Flame size={10} className="fill-rose-500 text-rose-500" /> {nutrition.calories} kcal
+            </span>
+            <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-emerald-200/10 shadow-3xs">
+              💪 {nutrition.protein} Protein
+            </span>
+            <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-blue-200/10 shadow-3xs">
+              🍞 {nutrition.carbs} Carbs
+            </span>
+          </div>
+        )}
 
         {/* Item Description */}
         {item.description && (

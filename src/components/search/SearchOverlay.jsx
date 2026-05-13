@@ -4,10 +4,16 @@ import { useUiStore } from '../../store/uiStore';
 import { useCityStore } from '../../store/cityStore';
 import { restaurants } from '../../data/restaurants';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Search, ArrowLeft, X, Store, Utensils, Hash, History, Flame } from 'lucide-react';
+import { Search, ArrowLeft, X, Store, Utensils, Hash, History, Flame, Plus, Minus, Star, Sparkles } from 'lucide-react';
 import { getUserJsonItem, setUserItem, removeUserItem } from '../../utils/storage';
 import { useAuthStore } from '../../store/authStore';
 import logo from '../../assets/logo.png';
+import { useCartStore } from '../../store/cartStore';
+import { formatPrice } from '../../utils/formatPrice';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import DishImage from '../common/DishImage';
+import { getNutritionData } from '../../utils/nutrition';
 
 const trendingSearches = [
   "Biryani", "Pizza", "Dosa", "Burger", "Thali", "Chinese", "Desserts", "North Indian"
@@ -18,6 +24,10 @@ export default function SearchOverlay() {
   const searchOpen = useUiStore((state) => state.searchOpen);
   const setSearchOpen = useUiStore((state) => state.setSearchOpen);
   const selectedCity = useCityStore((state) => state.selectedCity);
+
+  const cartItems = useCartStore((state) => state.items);
+  const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItem);
 
   const [query, setQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState([]);
@@ -284,29 +294,210 @@ export default function SearchOverlay() {
 
                   {/* Dishes Matches */}
                   {results.dishes.length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                       <h4 className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3 block">Dishes</h4>
-                      {results.dishes.map((dish) => (
-                        <button
-                          key={`${dish.restaurantId}-${dish.id}`}
-                          onClick={() => {
-                            setSearchOpen(false);
-                            navigate(`/restaurant/${dish.restaurantId}?item=${dish.id}`);
-                          }}
-                          className="w-full h-14 px-4 rounded-xl border border-zinc-100 dark:border-zinc-900/50 bg-zinc-50/40 dark:bg-zinc-900/10 flex items-center justify-between text-left hover:border-[--brand] hover:bg-[#FFF5F5] dark:hover:bg-[#2D1618]/30 hover:shadow-xs transition-all focus:outline-none group"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0">
-                            <Utensils size={16} className="text-zinc-400 dark:text-zinc-500 group-hover:text-[--brand] flex-shrink-0 transition-colors" />
-                            <div className="min-w-0">
-                              <div className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-[--brand] transition-colors truncate">{dish.name}</div>
-                              <div className="text-[12px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">from {dish.restaurantName} • Rs {dish.price}</div>
+                      {results.dishes.map((dish) => {
+                        const cartItemInstances = cartItems.filter(i => i.id === dish.id);
+                        const quantityInCart = cartItemInstances.reduce((sum, i) => sum + i.quantity, 0);
+                        const nutrition = getNutritionData(dish);
+
+                        return (
+                          <div
+                            key={`${dish.restaurantId}-${dish.id}`}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              navigate(`/restaurant/${dish.restaurantId}?item=${dish.id}`);
+                            }}
+                            className="w-full flex justify-between py-5 border-b border-zinc-100 dark:border-zinc-900/40 gap-4 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] px-3 -mx-3 rounded-2xl transition-all duration-300 cursor-pointer group text-left"
+                          >
+                            {/* Left column */}
+                            <div className="flex-1 min-w-0 pr-2 space-y-2">
+                              {/* Veg dot & badges */}
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {dish.isVeg ? (
+                                  <div className="veg-dot flex-shrink-0 shadow-3xs" title="Veg"></div>
+                                ) : (
+                                  <div className="nonveg-dot flex-shrink-0 shadow-3xs" title="Non-veg"></div>
+                                )}
+
+                                {dish.isBestseller && (
+                                  <span className="bg-amber-50/80 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1 border border-amber-200/20 shadow-3xs">
+                                    <Star size={10} className="fill-amber-500 text-amber-500" /> Bestseller
+                                  </span>
+                                )}
+
+                                {dish.isMostOrdered && (
+                                  <span className="bg-orange-50/80 text-orange-800 dark:bg-orange-950/20 dark:text-orange-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md flex-shrink-0 flex items-center gap-1 border border-orange-200/20 shadow-3xs">
+                                    <Sparkles size={10} className="text-orange-500" /> Student Choice
+                                  </span>
+                                )}
+
+                                {dish.rating && (
+                                  <span className="text-[9px] font-extrabold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                    <Star size={10} className="fill-amber-500 text-amber-500" /> {dish.rating.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Dish Name & Restaurant */}
+                              <div>
+                                <h3 className="text-[15px] font-bold text-zinc-900 dark:text-zinc-100 tracking-tight leading-snug group-hover:text-[--brand] transition-colors">
+                                  {dish.name}
+                                </h3>
+                                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                  from <span className="font-semibold text-zinc-500 dark:text-zinc-400">{dish.restaurantName}</span>
+                                </p>
+                              </div>
+
+                              {/* Price and Prep Time */}
+                              <div className="flex items-center gap-x-3 gap-y-1 mt-1">
+                                <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">
+                                  {formatPrice(dish.price)}
+                                </span>
+                                {dish.prepTime && (
+                                  <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium flex items-center gap-1">
+                                    ⏱ {dish.prepTime}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Nutritional Info Inline Capsules */}
+                              {nutrition && (
+                                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                  <span className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-rose-200/10 shadow-3xs">
+                                    <Flame size={10} className="fill-rose-500 text-rose-500" /> {nutrition.calories} kcal
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-emerald-200/10 shadow-3xs">
+                                    💪 {nutrition.protein} Protein
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border border-blue-200/10 shadow-3xs">
+                                    🍞 {nutrition.carbs} Carbs
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Description */}
+                              {dish.description && (
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-2">
+                                  {dish.description}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Right Column: Image and ADD button */}
+                            <div className="flex flex-col items-center justify-start flex-shrink-0 relative w-24 h-24 z-0">
+                              <div className="w-20 h-20 rounded-xl overflow-hidden border border-black/[0.04] dark:border-white/[0.04] bg-neutral-100 dark:bg-neutral-800 shadow-md relative group">
+                                <DishImage
+                                  src={dish.imageUrl}
+                                  alt={dish.name}
+                                  dishName={dish.name}
+                                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                                />
+                              </div>
+
+                              {/* ADD Button Container */}
+                              <div 
+                                className="absolute -bottom-1 z-10 h-[26px] w-[70px]"
+                                onClick={(e) => e.stopPropagation()} // Stop click navigating to restaurant!
+                              >
+                                <AnimatePresence mode="wait">
+                                  {quantityInCart > 0 ? (
+                                    <motion.div
+                                      key="stepper"
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.8 }}
+                                      className="flex items-center justify-between bg-white dark:bg-zinc-900 border border-[--brand]/20 text-[--brand] h-full w-full rounded-md shadow-md font-bold text-[11px] px-1 overflow-hidden"
+                                    >
+                                      <button
+                                        onClick={() => {
+                                          const targetInstance = cartItemInstances[cartItemInstances.length - 1];
+                                          removeItem(targetInstance.id, targetInstance.selectedCustomizations);
+                                          toast.info(`Removed 1 ${dish.name} from cart.`, {
+                                            position: 'bottom-center',
+                                            duration: 1500
+                                          });
+                                        }}
+                                        className="hover:bg-[--brand]/5 w-4 h-4 flex items-center justify-center rounded transition-colors focus:outline-none"
+                                      >
+                                        <Minus size={9} strokeWidth={3} />
+                                      </button>
+                                      <span className="text-[10px] text-center font-bold block text-[--brand]">
+                                        {quantityInCart}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          if (dish.customizations && dish.customizations.length > 0) {
+                                            setSearchOpen(false);
+                                            navigate(`/restaurant/${dish.restaurantId}?item=${dish.id}`);
+                                          } else {
+                                            const restaurant = restaurants.find(r => r.id === dish.restaurantId) || {
+                                              id: dish.restaurantId,
+                                              name: dish.restaurantName,
+                                              locality: "Campus Kitchens",
+                                              imageUrl: dish.imageUrl
+                                            };
+                                            const restInfo = {
+                                              id: restaurant.id,
+                                              name: restaurant.name,
+                                              locality: restaurant.locality,
+                                              imageUrl: restaurant.imageUrl
+                                            };
+                                            addItem(dish, restInfo);
+                                            toast.success(`${dish.name} added to cart!`, {
+                                              position: 'bottom-center',
+                                              duration: 1500
+                                            });
+                                          }
+                                        }}
+                                        className="hover:bg-[--brand]/5 w-4 h-4 flex items-center justify-center rounded transition-colors focus:outline-none"
+                                      >
+                                        <Plus size={9} strokeWidth={3} />
+                                      </button>
+                                    </motion.div>
+                                  ) : (
+                                    <motion.button
+                                      key="add-btn"
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.8 }}
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => {
+                                        if (dish.customizations && dish.customizations.length > 0) {
+                                          setSearchOpen(false);
+                                          navigate(`/restaurant/${dish.restaurantId}?item=${dish.id}`);
+                                        } else {
+                                          const restaurant = restaurants.find(r => r.id === dish.restaurantId) || {
+                                            id: dish.restaurantId,
+                                            name: dish.restaurantName,
+                                            locality: "Campus Kitchens",
+                                            imageUrl: dish.imageUrl
+                                          };
+                                          const restInfo = {
+                                            id: restaurant.id,
+                                            name: restaurant.name,
+                                            locality: restaurant.locality,
+                                            imageUrl: restaurant.imageUrl
+                                          };
+                                          addItem(dish, restInfo);
+                                          toast.success(`${dish.name} added to cart!`, {
+                                            position: 'bottom-center',
+                                            duration: 1500
+                                          });
+                                        }
+                                      }}
+                                      className="bg-[--brand]/5 dark:bg-[--brand]/10 hover:bg-[--brand] dark:hover:bg-[--brand] border border-[--brand]/15 hover:border-[--brand] text-[--brand] hover:text-white h-full w-full rounded-md shadow-3xs font-black text-[10px] uppercase tracking-wider flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+                                    >
+                                      Add
+                                    </motion.button>
+                                  )}
+                                </AnimatePresence>
+                              </div>
                             </div>
                           </div>
-                          <span className="text-[12px] text-[--brand] font-semibold flex-shrink-0 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-250 pr-1">
-                            Order now
-                          </span>
-                        </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

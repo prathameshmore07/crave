@@ -33,7 +33,8 @@ import {
   Check,
   Trash2,
   MessageSquare,
-  Send
+  Send,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatPrice } from '../utils/formatPrice';
@@ -76,6 +77,285 @@ export default function Tracking() {
       }
     }
   }
+
+  const handlePrintReceipt = () => {
+    if (!orderToShow) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Popup blocked! Please allow popups to download your receipt.");
+      return;
+    }
+    
+    // Construct order item rows
+    const itemRows = orderToShow.items.map(item => `
+      <tr style="border-bottom: 1px solid #f3f4f6; font-size: 13px;">
+        <td style="padding: 12px 0; font-weight: 600; color: #1f2937; text-align: left;">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: \${item.isVeg ? '#10b981' : '#ef4444'}; margin-right: 6px;"></span>
+          \${item.name}
+          \${item.selectedCustomizations && item.selectedCustomizations.length > 0 
+            ? \`<div style="font-size: 10px; color: #6b7280; font-weight: 500; margin-top: 2px; padding-left: 14px;">\${item.selectedCustomizations.map(c => c.name).join(', ')}</div>\` 
+            : ''}
+        </td>
+        <td style="padding: 12px 0; text-align: center; color: #4b5563;">\${item.quantity}</td>
+        <td style="padding: 12px 0; text-align: right; font-family: monospace; font-weight: bold; color: #1f2937;">₹\${(item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    // Instructions markup
+    let instructionsSection = '';
+    if (orderToShow.cookingInstructions || orderToShow.deliveryInstruction) {
+      instructionsSection = `
+        <div style="margin-top: 24px; padding: 16px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; text-align: left;">
+          <h3 style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 10px; margin-top: 0;">Special Instructions</h3>
+          \${orderToShow.cookingInstructions ? \`
+            <div style="font-size: 12px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              <strong style="color: #ea580c;">🍳 Chef Note:</strong> \${orderToShow.cookingInstructions}
+            </div>
+          \` : ''}
+          \${orderToShow.deliveryInstruction ? \`
+            <div style="font-size: 12px; font-weight: 500; color: #374151;">
+              <strong style="color: #2563eb;">🛵 Rider Note:</strong> <span style="text-transform: capitalize;">\${orderToShow.deliveryInstruction.replace('-', ' ')}</span>
+            </div>
+          \` : ''}
+        </div>
+      `;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Crave Receipt - Order #\${orderToShow.orderId}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <style>
+          body {
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            background-color: #ffffff;
+            color: #111827;
+            margin: 0;
+            padding: 40px;
+            -webkit-print-color-adjust: exact;
+          }
+          .invoice-card {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #f3f4f6;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+          }
+          .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px dashed #f3f4f6;
+            padding-bottom: 24px;
+            margin-bottom: 24px;
+          }
+          .brand-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff385c;
+            letter-spacing: -0.03em;
+            margin: 0;
+            text-align: left;
+          }
+          .brand-tag {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #9ca3af;
+            margin-top: 4px;
+            text-align: left;
+          }
+          .invoice-title {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #111827;
+            text-align: right;
+            margin: 0 0 8px 0;
+          }
+          .meta-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+            display: block;
+          }
+          .meta-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+            margin-top: 2px;
+          }
+          .details-grid {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+          }
+          .restaurant-box {
+            background-color: #fffbeb;
+            border: 1px solid #fef3c7;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+          }
+          .address-box {
+            background-color: #f0fdf4;
+            border: 1px solid #dcfce7;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: left;
+          }
+          .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+          }
+          .totals-table {
+            width: 100%;
+            margin-top: 16px;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 16px;
+          }
+          .totals-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-weight: 600;
+          }
+          .grand-total-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 900;
+            color: #111827;
+            border-top: 2px dashed #f3f4f6;
+            padding-top: 16px;
+            margin-top: 16px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 11px;
+            color: #9ca3af;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            line-height: 1.6;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            .invoice-card {
+              border: none;
+              box-shadow: none;
+              padding: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-card">
+          <div class="header-row">
+            <div>
+              <h1 class="brand-logo">CRAVE.</h1>
+              <div class="brand-tag">Premium Food Delivery</div>
+            </div>
+            <div>
+              <div class="invoice-title">Official Invoice</div>
+              <div style="text-align: right;">
+                <span class="meta-label">ORDER ID:</span>
+                <div class="meta-value" style="font-family: monospace; letter-spacing: 0.5px;">\${orderToShow.orderId}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div class="restaurant-box">
+              <div class="meta-label" style="color: #b45309;">ORDERED FROM</div>
+              <div class="meta-value" style="font-size: 14px; color: #78350f; margin-top: 4px;">\${orderToShow.restaurantName}</div>
+              <div style="font-size: 11px; color: #92400e; font-weight: 500; margin-top: 2px;">\${orderToShow.locality || 'Crave Kitchen'}</div>
+              <div style="font-size: 11px; color: #92400e; font-weight: 600; margin-top: 8px;">Date: \${orderToShow.date}</div>
+            </div>
+            <div class="address-box">
+              <div class="meta-label" style="color: #15803d;">DELIVERED TO</div>
+              <div class="meta-value" style="font-size: 13px; color: #14532d; margin-top: 4px;">\${orderToShow.deliveryAddress?.fullName || 'Valued Customer'}</div>
+              <div style="font-size: 11px; color: #166534; font-weight: 500; margin-top: 2px; line-height: 1.4;">
+                \${orderToShow.deliveryAddress?.flatNo ? \`\${orderToShow.deliveryAddress.flatNo}, \` : ''}
+                \${orderToShow.deliveryAddress?.area || 'Campus Address'}
+              </div>
+              <div style="font-size: 11px; color: #166534; font-weight: 600; margin-top: 8px;">Method: \${orderToShow.paymentMethod || 'UPI Payment'}</div>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr style="border-bottom: 2px solid #111827; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; text-align: left;">
+                <th style="padding-bottom: 8px;">Menu Item</th>
+                <th style="padding-bottom: 8px; text-align: center;">Qty</th>
+                <th style="padding-bottom: 8px; text-align: right;">Total Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              \${itemRows}
+            </tbody>
+          </table>
+
+          <div class="totals-table">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span style="font-family: monospace;">₹\${(orderToShow.totalAmount - 15).toFixed(2)}</span>
+            </div>
+            <div class="totals-row">
+              <span>Packaging & Handling Charges</span>
+              <span style="font-family: monospace;">₹15.00</span>
+            </div>
+            <div class="totals-row">
+              <span>Delivery Partner Fee</span>
+              <span style="color: #10b981;">FREE</span>
+            </div>
+            <div class="grand-total-row">
+              <span>Total Paid</span>
+              <span style="font-family: monospace; color: #ff385c;">₹\${orderToShow.totalAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
+          \${instructionsSection}
+
+          <div class="footer">
+            Thank you for dining with Crave!<br />
+            Loved your food? Open the app to rate your delivery agent and kitchen chef.
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 300);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    toast.success("Generating your PDF Receipt...", {
+      description: "Press Print or Save to save your receipt."
+    });
+  };
 
   const orderId = orderToShow?.orderId || id || 'general';
   const riderStorageKey = `rider_chat_${orderId}`;
@@ -516,8 +796,10 @@ export default function Tracking() {
               </div>
             )}
 
-            {/* 8-stage progress indicator */}
-            <ProgressBar currentStageIdx={currentStageIdx} />
+            {/* 8-stage progress indicator inside bounded scroll container */}
+            <div className="max-h-[165px] overflow-y-auto scrollbar-thin pr-1 border border-black/[0.04] dark:border-white/[0.04] bg-black/[0.01] dark:bg-white/[0.01] rounded-2xl p-3 shadow-inner">
+              <ProgressBar currentStageIdx={currentStageIdx} />
+            </div>
 
             {/* Delivery Partner Details (assigned starting at Stage 1: Confirmed) */}
             {currentStageIdx >= 1 && assignedRider && (
@@ -570,7 +852,7 @@ export default function Tracking() {
               Live Delivery Route Map
             </h3>
             
-            <div className="relative h-[260px] bg-gray-50 dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.04] rounded-2xl overflow-hidden shadow-inner">
+            <div className="relative h-[210px] bg-gray-50 dark:bg-neutral-900 border border-black/[0.04] dark:border-white/[0.04] rounded-2xl overflow-hidden shadow-inner">
               {/* Stylized background grid matching coordinates */}
               <div className="absolute inset-0 opacity-15 dark:opacity-5">
                 <svg width="100%" height="100%">
@@ -656,7 +938,16 @@ export default function Tracking() {
 
           {/* Ordered items details card */}
           <div className="p-5 bg-white dark:bg-dark-surface border border-black/[0.05] dark:border-white/[0.05] rounded-3xl space-y-3.5 shadow-md">
-            <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-black/[0.04] dark:border-white/[0.04] pb-2.5">Receipt & Order Items</h3>
+            <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04] pb-2.5">
+              <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Receipt & Order Items</h3>
+              <button
+                onClick={handlePrintReceipt}
+                className="flex items-center gap-1 bg-brand/5 hover:bg-brand hover:text-white text-brand px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer border-none outline-none"
+              >
+                <Download size={11} />
+                Download PDF
+              </button>
+            </div>
             
             <div className="divide-y divide-black/[0.03] dark:divide-white/[0.03] max-h-48 overflow-y-auto pr-1">
               {orderToShow.items.map((item, idx) => (
@@ -693,6 +984,27 @@ export default function Tracking() {
                 <span>Total Paid via {orderToShow.paymentMethod || "UPI"}</span>
                 <span className="font-mono text-brand">{formatPrice(orderToShow.totalAmount)}</span>
               </div>
+
+              {/* Persistent Order Instructions Block */}
+              {(orderToShow.cookingInstructions || orderToShow.deliveryInstruction) && (
+                <div className="border-t border-black/[0.05] dark:border-white/[0.05] pt-3 mt-2 space-y-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-550 block text-left">Your Instructions</span>
+                  <div className="space-y-1">
+                    {orderToShow.cookingInstructions && (
+                      <div className="flex items-center gap-1.5 p-2 rounded-xl bg-orange-500/[0.04] dark:bg-orange-500/[0.02] border border-orange-500/10 text-[10px] text-gray-700 dark:text-gray-300 font-medium text-left">
+                        <span className="font-extrabold text-orange-600 dark:text-orange-400 shrink-0">🍳 Chef Note:</span>
+                        <span className="truncate">{orderToShow.cookingInstructions}</span>
+                      </div>
+                    )}
+                    {orderToShow.deliveryInstruction && (
+                      <div className="flex items-center gap-1.5 p-2 rounded-xl bg-blue-500/[0.04] dark:bg-blue-500/[0.02] border border-blue-500/10 text-[10px] text-gray-700 dark:text-gray-300 font-medium text-left">
+                        <span className="font-extrabold text-blue-600 dark:text-blue-400 shrink-0">🛵 Rider Note:</span>
+                        <span className="capitalize">{orderToShow.deliveryInstruction.replace('-', ' ')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
