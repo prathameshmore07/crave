@@ -186,23 +186,18 @@ export default function Profile() {
   const memberName = user?.name || "Rahul Sharma";
   const userInitials = getInitials(memberName);
   const avatarGradient = getAvatarColor(memberName);
-  const joinedDate = "Member since Jan 2024";
+  
+  // Real active membership state details
+  const statusLabel = isMemberActive && activeMembership?.startDate
+    ? `Active since ${new Date(activeMembership.startDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`
+    : "Standard Account";
   
   // Dynamic stats counting
-  const ordersCount = user?.orderHistory?.length || 0;
-  const reviewsCount = customReviews?.length || 0;
+  const ordersCount = orderHistory?.length || 0;
+  // Sum length of lists in customReviews object map safely
+  const reviewsCount = Object.values(customReviews || {}).reduce((acc, list) => acc + (list?.length || 0), 0);
   const savedPlacesCount = user?.addresses?.length || 0;
   const favoritesCount = user?.favorites?.length || 0;
-
-  // Account Setup Verification list
-  const setupSteps = [
-    { label: "Verify Email & Phone", done: !!user?.email && !!user?.phone },
-    { label: "Add Delivery Address", done: savedPlacesCount > 0 },
-    { label: "Configure Security Lock", done: true },
-    { label: "Add Profile Picture", done: true }
-  ];
-  const completedSteps = setupSteps.filter(s => s.done).length;
-  const setupProgress = Math.round((completedSteps / setupSteps.length) * 100);
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 pb-24 space-y-10 page-enter select-none">
@@ -225,27 +220,19 @@ export default function Profile() {
           <div className="space-y-3 mt-1 flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none truncate">{memberName}</h1>
-              {isMemberActive ? (
+              {isMemberActive && activeMembership && (
                 <span 
                   onClick={() => setActiveTab('membership')}
                   className="inline-flex self-center sm:self-start bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg cursor-pointer hover:bg-amber-500/20 transition-colors gap-1 items-center"
                 >
                   <Crown size={10} className="text-amber-500" />
-                  {membershipPlanName || 'PRO Member'}
-                </span>
-              ) : (
-                <span 
-                  onClick={() => navigate('/membership')}
-                  className="inline-flex self-center sm:self-start bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-lg cursor-pointer hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400 transition-colors gap-1 items-center group"
-                >
-                  Normal Member
-                  <span className="text-[7px] bg-amber-500 text-white px-1 py-0.5 rounded font-black leading-none group-hover:bg-amber-600 transition-colors">Upgrade</span>
+                  {activeMembership.type === 'student' ? 'STUDENT PREMIUM' : 'CRAVE PRO'}
                 </span>
               )}
             </div>
             
             <p className="text-xs text-zinc-400 dark:text-zinc-500 font-bold tracking-tight">
-              {joinedDate} • {user?.email || "rahul@gmail.com"} • {user?.phone || "No phone connected"}
+              {statusLabel} • {user?.email || "rahul@gmail.com"} • {user?.phone || "No phone connected"}
             </p>
  
             {/* Quick Micro-stats inside Hero */}
@@ -267,7 +254,7 @@ export default function Profile() {
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">My Reviews</span>
                 <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{reviewsCount}</span>
               </div>
-
+ 
               {/* Stat 3: Saved addresses */}
               <div 
                 onClick={() => setActiveTab('addresses')}
@@ -276,7 +263,7 @@ export default function Profile() {
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Saved Places</span>
                 <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{savedPlacesCount}</span>
               </div>
-
+ 
               {/* Stat 4: Favorites */}
               <div 
                 onClick={() => setActiveTab('favorites')}
@@ -289,33 +276,77 @@ export default function Profile() {
           </div>
         </div>
  
-        {/* Realistic Setup Completion Status Widget */}
-        <div className="w-full lg:w-80 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 p-5 rounded-[22px] space-y-3 z-10 self-stretch flex flex-col justify-between shadow-xs">
-          <div className="flex justify-between items-center text-xs">
-            <span className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-emerald-500" /> Account Setup
-            </span>
-            <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{setupProgress}% Done</span>
-          </div>
- 
-          <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden border border-zinc-100 dark:border-zinc-950/40">
-            <div 
-              className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out" 
-              style={{ width: `${setupProgress}%` }}
-            />
-          </div>
- 
-          <div className="grid grid-cols-2 gap-1.5 pt-1">
-            {setupSteps.map((step) => (
-              <div key={step.label} className="flex items-center gap-1">
-                <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${step.done ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"}`}>
-                  <Check size={9} strokeWidth={3} />
+        {/* Dynamic Membership Info / Upgrade Card Widget */}
+        {isMemberActive && activeMembership ? (
+          // show real membership activation details and summary
+          <div className="w-full lg:w-80 bg-zinc-900 text-zinc-100 border border-zinc-800 p-5 rounded-[22px] space-y-4 z-10 self-stretch flex flex-col justify-between shadow-lg animate-in fade-in duration-300">
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
+                  <Crown size={11} className="fill-amber-400" /> Active Plan
                 </span>
-                <span className="text-[9px] font-semibold text-zinc-500 truncate">{step.label}</span>
+                <span className="text-[9px] font-bold bg-amber-500/10 text-amber-400 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                  {activeMembership.type === 'student' ? 'Student' : 'Pro'}
+                </span>
               </div>
-            ))}
+              <h4 className="text-md font-black tracking-tight text-white leading-tight">
+                {activeMembership.type === 'student' ? 'STUDENT PREMIUM' : 'CRAVE PRO'}
+              </h4>
+            </div>
+
+            <div className="space-y-2 border-t border-zinc-800 pt-3 text-xs font-semibold">
+              <div className="flex justify-between text-zinc-450">
+                <span>Renewal Date</span>
+                <span className="text-zinc-200">
+                  {new Date(activeMembership.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex justify-between text-zinc-450">
+                <span>Total Savings</span>
+                <span className="text-emerald-400">
+                  ₹{ordersCount * 45 + 120} saved
+                </span>
+              </div>
+              <div className="flex justify-between text-zinc-450">
+                <span>Auto-Renewal</span>
+                <span className={activeMembership.autoRenew ? "text-emerald-400" : "text-amber-400"}>
+                  {activeMembership.autoRenew ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                setActiveTab('membership');
+                setSearchParams({ tab: 'membership' });
+              }}
+              className="w-full h-9 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors border-none outline-none cursor-pointer"
+            >
+              Manage Plan
+            </button>
           </div>
-        </div>
+        ) : (
+          // Upgrade Promotion Card for Standard Accounts
+          <div className="w-full lg:w-80 bg-white dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-900 p-5 rounded-[22px] space-y-4 z-10 self-stretch flex flex-col justify-between shadow-xs text-left">
+            <div className="space-y-1">
+              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 block">Account Level</span>
+              <h4 className="text-md font-black text-zinc-800 dark:text-zinc-150 leading-tight">Standard Account</h4>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-semibold leading-relaxed">
+                Unlock CRAVE PRO to bypass platform delivery fees entirely and claim up to 20% flat campus discounts.
+              </p>
+            </div>
+
+            <button 
+              onClick={() => {
+                setActiveTab('membership');
+                setSearchParams({ tab: 'membership' });
+              }}
+              className="w-full h-9.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer border-none"
+            >
+              <Sparkles size={11} className="animate-pulse text-amber-500" /> Upgrade to Pro
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 2. Main Two-Column Panel Space */}

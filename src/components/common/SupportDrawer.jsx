@@ -2,13 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageSquare, PhoneCall, Send, HelpCircle, CheckCircle, Clock, Compass } from 'lucide-react';
 import { useUiStore } from '../../store/uiStore';
+import { useOrderStore } from '../../store/orderStore';
+import { useAuthStore } from '../../store/authStore';
+import { getLiveChatResponse, loadLocalChatHistory, saveLocalChatHistory } from '../../services/geminiService';
 import { toast } from 'sonner';
 
+// Quick Action Prompts
 const defaultFaqs = [
-  { text: "Where is my delivery rider?", reply: "I have pinged your rider directly. They are moving along the scheduled route and are estimated to reach you within the ETA window. You can view their real-time coordinates on the tracking screen!" },
-  { text: "How do I add cooking instructions?", reply: "Cooking guidelines are transmitted to the restaurant terminal immediately upon order acceptance. Once the kitchen starts preparation, notes cannot be updated. Let me connect you to the restaurant manager if you have severe allergen requests." },
-  { text: "Can I cancel my active order?", reply: "Our systems allow immediate cancelations within 60 seconds of checkout. Beyond this window, restaurants already start prep, and cancellation fees of up to 100% apply. Would you like me to raise an emergency cancellation dispute with the restaurant?" },
-  { text: "My food quality was unsatisfactory", reply: "I am deeply sorry to hear this. Quality is our highest priority at CRAVE. I have opened an official Quality Dispute. Please snap a quick picture of the meal; I will process a 100% refund voucher for your trouble instantly!" }
+  { text: "Refund Issue", reply: "I want to request a refund for my order." },
+  { text: "Order Delayed", reply: "My order is delayed. Can you check where it is?" },
+  { text: "Wrong Item Received", reply: "I received a wrong or missing item in my order." },
+  { text: "Payment Failed", reply: "My payment failed but the money was deducted from my account." }
 ];
 
 export default function SupportDrawer() {
@@ -16,10 +20,14 @@ export default function SupportDrawer() {
   const supportType = useUiStore((state) => state.supportType);
   const setOpen = useUiStore((state) => state.setSupportOpen);
 
+  const activeOrder = useOrderStore((state) => state.activeOrder);
+  const user = useAuthStore((state) => state.user);
+
+  const orderId = activeOrder?.orderId || 'general';
+  const chatStorageKey = `support_chat_${orderId}`;
+
   const [activeMode, setActiveMode] = useState('chat'); // 'chat' | 'helpline'
-  const [messages, setMessages] = useState([
-    { sender: 'agent', text: "Hello! I'm Rohan from CRAVE Priority Assistance. I see you're checking on your active order. How can I help you today?", time: 'Just now' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
@@ -31,12 +39,30 @@ export default function SupportDrawer() {
 
   const chatEndRef = useRef(null);
 
-  // Sync initial state
+  // Sync initial state and tab mode
   useEffect(() => {
     if (isOpen) {
       setActiveMode(supportType);
     }
   }, [isOpen, supportType]);
+
+  // Load chat history from localStorage on mount/open
+  useEffect(() => {
+    if (isOpen) {
+      const saved = loadLocalChatHistory(chatStorageKey);
+      if (saved && saved.length > 0) {
+        setMessages(saved);
+      } else {
+        // Gemini customer support assistant initial greeting
+        const greeting = activeOrder 
+          ? `Hello! I'm Rohan from CRAVE Priority Assistance. I see you're checking on your active order from ${activeOrder.restaurantName}. How can I help you today?`
+          : "Hello! I'm Rohan from CRAVE Priority Assistance. How can I help you today?";
+        const initial = [{ sender: 'agent', text: greeting, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }];
+        setMessages(initial);
+        saveLocalChatHistory(chatStorageKey, initial);
+      }
+    }
+  }, [isOpen, chatStorageKey, activeOrder]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -56,47 +82,67 @@ export default function SupportDrawer() {
 
   if (!isOpen) return null;
 
-  const handleSendMessage = (textToSend) => {
-    if (!textToSend.trim()) return;
+  const handleSendMessage = async (textToSend) => {
+    if (!textToSend.trim() || isTyping) return;
 
-    // Add user message
-    const userMsg = { sender: 'user', text: textToSend, time: 'Just now' };
-    setMessages(prev => [...prev, userMsg]);
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Add user message to history
+    const userMsg = { sender: 'user', text: textToSend, time: timestamp };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    saveLocalChatHistory(chatStorageKey, updatedMessages);
     setInputText("");
 
     // Trigger Rohan typing simulation
     setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      let replyText = "Thank you for reaching out! I've flagged this thread directly to our local delivery captain. They are coordinating with your rider and will resolve this immediately.";
-      
-      // Match custom keyword triggers for fun realism
-      const lower = textToSend.toLowerCase();
-      if (lower.includes('rider') || lower.includes('driver') || lower.includes('where')) {
-        replyText = "I've checked the rider's telemetry logs. They are currently en route to your address. I've sent an over-the-air buzz to their device to speed up dispatch.";
-      } else if (lower.includes('cold') || lower.includes('spill') || lower.includes('bad')) {
-        replyText = "This is unacceptable. I have credited a ₹150 compensation coupon code [CRAVECARE150] to your account for this inconvenience. We will audit this restaurant partner immediately.";
-      } else if (lower.includes('cancel')) {
-        replyText = "Initiating direct kitchen terminal override... The chef has already packed the food, but I am requesting an exception. Let me check if we can secure a full cancellation refund for you.";
-      }
 
-      setMessages(prev => [...prev, { sender: 'agent', text: replyText, time: 'Just now' }]);
+    try {
+      const context = {
+        customerName: user?.name || "Valued Customer",
+        restaurantName: activeOrder?.restaurantName || "Campus Kitchen",
+        orderStatus: activeOrder?.orderStatus || "Order Confirmed",
+        items: activeOrder?.items || [],
+        riderName: activeOrder?.riderInfo?.name || "Rohan",
+        eta: activeOrder?.eta || "15",
+        paymentMethod: activeOrder?.paymentMethod || "UPI"
+      };
+
+      // Call the Gemini service with conversation context
+      const replyText = await getLiveChatResponse({
+        type: "support",
+        message: textToSend,
+        chatHistory: messages,
+        context
+      });
+
+      setIsTyping(false);
+      const replyMsg = { 
+        sender: 'agent', 
+        text: replyText, 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      };
+      
+      const updatedWithReply = [...updatedMessages, replyMsg];
+      setMessages(updatedWithReply);
+      saveLocalChatHistory(chatStorageKey, updatedWithReply);
       toast.success("Rohan has replied to your query!");
-    }, 1500);
+    } catch (err) {
+      console.error("Failed to fetch support chat reply:", err);
+      setIsTyping(false);
+      const errorMsg = { 
+        sender: 'agent', 
+        text: "Support is temporarily unavailable. Please try again in a few moments.", 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      };
+      const updatedWithError = [...updatedMessages, errorMsg];
+      setMessages(updatedWithError);
+      saveLocalChatHistory(chatStorageKey, updatedWithError);
+    }
   };
 
   const handleFaqClick = (faq) => {
-    // Add user question
-    const userMsg = { sender: 'user', text: faq.text, time: 'Just now' };
-    setMessages(prev => [...prev, userMsg]);
-
-    // Trigger typing response
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, { sender: 'agent', text: faq.reply, time: 'Just now' }]);
-      toast.success("Rohan has resolved your inquiry!");
-    }, 1200);
+    handleSendMessage(faq.reply);
   };
 
   const handleCallbackSubmit = (e) => {

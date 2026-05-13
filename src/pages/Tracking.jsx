@@ -11,6 +11,7 @@ import { useReviewStore } from '../store/reviewStore';
 import { useAuthStore } from '../store/authStore';
 import { getUserJsonItem } from '../utils/storage';
 import { riders } from '../data/riders';
+import { getLiveChatResponse, loadLocalChatHistory, saveLocalChatHistory } from '../services/geminiService';
 
 // use shared brand assets across payment flow
 import logo from '../assets/logo.png';
@@ -58,6 +59,27 @@ export default function Tracking() {
   const setCartOpen = useUiStore((state) => state.setCartOpen);
   const setSupportOpen = useUiStore((state) => state.setSupportOpen);
 
+  // Match the route order ID or fallback to activeOrder / latest_order
+  let orderToShow = activeOrder;
+  if (id && activeOrder?.orderId !== id) {
+    const historicalOrder = orderHistory.find(o => o.orderId === id);
+    if (historicalOrder) {
+      orderToShow = historicalOrder;
+    } else {
+      try {
+        const parsed = getUserJsonItem('latest_order');
+        if (parsed && parsed.orderId === id) {
+          orderToShow = parsed;
+        }
+      } catch (e) {
+        console.error("Failed to parse latest_order from localStorage:", e);
+      }
+    }
+  }
+
+  const orderId = orderToShow?.orderId || id || 'general';
+  const riderStorageKey = `rider_chat_${orderId}`;
+
   // States
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
   
@@ -88,75 +110,89 @@ export default function Tracking() {
   }, [isRatingModalOpen]);
 
 
-  // Initialize chat when messaging opens
+  // Initialize and load rider chat when messaging opens
   useEffect(() => {
-    if (isRiderMessaging && chatMessages.length === 0) {
-      setChatMessages([
-        {
-          id: 'm-1',
-          sender: 'rider',
-          text: `Hi there! I have securely loaded your hot meal package and I am speeding down the shortest route to your block. Do you need any condiments or specific gate drop-off instructions?`,
-          timestamp: new Date(Date.now() - 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
+    if (isRiderMessaging) {
+      const saved = loadLocalChatHistory(riderStorageKey);
+      if (saved && saved.length > 0) {
+        setChatMessages(saved);
+      } else {
+        const assignedRider = orderToShow?.riderInfo || riders[0];
+        const greeting = `Hi there! I'm ${assignedRider?.name || 'your rider'}. I have securely loaded your hot meal package and I am speeding down the shortest route to your block. Do you need any condiments or specific gate drop-off instructions?`;
+        const initial = [
+          {
+            id: 'm-1',
+            sender: 'rider',
+            text: greeting,
+            timestamp: new Date(Date.now() - 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ];
+        setChatMessages(initial);
+        saveLocalChatHistory(riderStorageKey, initial);
+      }
     }
-  }, [isRiderMessaging, chatMessages.length]);
+  }, [isRiderMessaging, riderStorageKey, orderToShow]);
 
 
-  const handleSendChatMessage = (text) => {
-    if (!text.trim()) return;
+  const handleSendChatMessage = async (text) => {
+    if (!text.trim() || isRiderTyping) return;
     const userMsg = {
       id: `m-${Date.now()}`,
       sender: 'user',
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    setChatMessages(prev => [...prev, userMsg]);
+    
+    const updatedMessages = [...chatMessages, userMsg];
+    setChatMessages(updatedMessages);
+    saveLocalChatHistory(riderStorageKey, updatedMessages);
     setNewMessageText("");
 
     setIsRiderTyping(true);
     
-    // Choose contextual automated response
-    let riderReplyText = "Understood! I'm on it. See you in a few minutes.";
-    const lower = text.toLowerCase();
-    if (lower.includes("leave") || lower.includes("gate")) {
-      riderReplyText = "Sure, I'll drop the package off at the security gate and snap a picture! 👍";
-    } else if (lower.includes("outside") || lower.includes("here")) {
-      riderReplyText = "Excellent! I'm rounding the corner now. See you in 1 minute.";
-    } else if (lower.includes("call")) {
-      riderReplyText = "Got it! I will call your number the second I arrive at your building block.";
-    } else if (lower.includes("fast") || lower.includes("hurry")) {
-      riderReplyText = "Understood! Driving safely but quickly. Navigating the campus now.";
-    }
+    try {
+      const assignedRider = orderToShow?.riderInfo || riders[0];
+      const context = {
+        restaurantName: orderToShow?.restaurantName || "ITM Canteen",
+        orderStatus: orderToShow?.orderStatus || "Out for Delivery",
+        eta: orderToShow?.eta || "10",
+        deliveryAddress: orderToShow?.deliveryAddress,
+        riderName: assignedRider?.name || "Rohan"
+      };
 
-    setTimeout(() => {
+      // Call Gemini customer support/rider assistant
+      const replyText = await getLiveChatResponse({
+        type: "rider",
+        message: text,
+        chatHistory: chatMessages,
+        context
+      });
+
       setIsRiderTyping(false);
-      setChatMessages(prev => [...prev, {
+      const replyMsg = {
         id: `m-${Date.now() + 1}`,
         sender: 'rider',
-        text: riderReplyText,
+        text: replyText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    }, 1500);
-  };
+      };
 
-  // Match the route order ID or fallback to activeOrder / latest_order
-  let orderToShow = activeOrder;
-  if (id && activeOrder?.orderId !== id) {
-    const historicalOrder = orderHistory.find(o => o.orderId === id);
-    if (historicalOrder) {
-      orderToShow = historicalOrder;
-    } else {
-      try {
-        const parsed = getUserJsonItem('latest_order');
-        if (parsed && parsed.orderId === id) {
-          orderToShow = parsed;
-        }
-      } catch (e) {
-        console.error("Failed to parse latest_order from localStorage:", e);
-      }
+      const updatedWithReply = [...updatedMessages, replyMsg];
+      setChatMessages(updatedWithReply);
+      saveLocalChatHistory(riderStorageKey, updatedWithReply);
+    } catch (err) {
+      console.error("Failed to fetch rider reply:", err);
+      setIsRiderTyping(false);
+      const errorMsg = {
+        id: `m-err-${Date.now()}`,
+        sender: 'rider',
+        text: "Support is temporarily unavailable.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      const updatedWithError = [...updatedMessages, errorMsg];
+      setChatMessages(updatedWithError);
+      saveLocalChatHistory(riderStorageKey, updatedWithError);
     }
-  }
+  };
 
   // Handle live delivery simulation (survives page reloads perfectly via timestamp tracking!)
   useEffect(() => {
