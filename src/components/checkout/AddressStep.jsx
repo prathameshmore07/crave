@@ -185,7 +185,7 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext, 
             {/* Section 2: Core Delivery Coordinates */}
             <div className="space-y-3 pt-1">
               <div className="flex items-center gap-1.5 border-b border-black/[0.03] dark:border-white/[0.03] pb-1">
-                <span className="text-[9px] font-black uppercase tracking-wider text-brand">2. Address Coordinates</span>
+                <span className="text-[9px] font-black uppercase tracking-wider text-brand">2. Address Details</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -253,15 +253,18 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext, 
                       pattern: {
                         value: /^\d{6}$/,
                         message: "PIN must be exactly 6 digits"
-                      },
-                      onChange: (e) => {
-                        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
                       }
                     })}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setValue("pincode", val, { shouldValidate: true });
+                    }}
                     placeholder="e.g. 400050"
-                    className="h-10 px-3.5 w-full border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-dark-bg text-xs font-semibold rounded-xl outline-none focus:ring-1 focus:ring-brand text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-650 transition-all"
+                    className={`h-10 px-3.5 w-full border ${errors.pincode ? 'border-brand/50 bg-brand/[0.02]' : 'border-black/[0.06] dark:border-white/[0.06]'} bg-white dark:bg-dark-bg text-xs font-semibold rounded-xl outline-none focus:ring-1 focus:ring-brand text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-650 transition-all`}
                   />
-                  {errors.pincode && <span className="text-[9px] font-bold text-brand block">{errors.pincode.message}</span>}
+                  <span className={`text-[9px] font-bold block transition-colors ${errors.pincode ? 'text-brand' : 'text-gray-400 dark:text-gray-500'}`}>
+                    {errors.pincode ? errors.pincode.message : "PIN must be exactly 6 digits"}
+                  </span>
                 </div>
 
                 <div className="space-y-1">

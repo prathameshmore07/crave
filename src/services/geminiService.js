@@ -196,44 +196,81 @@ Respond realistically to gating, bells, phone calls, location tracking, or drop-
 /**
  * Specialized service to validate kitchen instructions.
  * Rejects non-food items (cigarettes, illegal errands, etc.)
+ * Uses a combination of local high-priority filters and AI verification.
  */
 export async function validateChefInstruction(instruction) {
-  if (!instruction || instruction.trim().length < 3) return { allowed: true };
+  if (!instruction || instruction.trim().length < 2) return { allowed: true };
 
+  const normalized = instruction.toLowerCase().trim().replace(/[\s\W]+/g, '');
+  
+  // 1. HARD-LOCKED LOCAL FILTER (Instant rejection for safety & speed)
+  // Catches obvious and common violations including leetspeak/misspellings
+  const blacklistPatterns = [
+    /cigg?ar[ae]tt?e/i, /sutta/i, /smoke/i, /vape/i, /tobacco/i, /t0bbaco/i, /bidi/i, /cigar/i, /h[o0]+kah/i,
+    /alcohol/i, /beer/i, /wine/i, /whiskey/i, /vodka/i, /rum/i, /liquor/i, /daru/i,
+    /charas/i, /ganja/i, /weed/i, /drug/i, /cocaine/i, /mdma/i, /lsd/i, /hashish/i, /w33d/i, /j[o0]int/i,
+    /panmasala/i, /gutkha/i, /khaini/i, /supari/i, /vimal/i,
+    /medicine/i, /tablet/i, /pill/i, /condom/i, /contraceptive/i,
+    /errand/i, /pickup/i, /buyfrom/i, /panipuri/i, /colddrink/i, /chocolate/i,
+    /extramoney/i, /extratip/i, /cashdunga/i, /paisedunga/i,
+    /cancel/i, /offline/i, /bahar/i
+  ];
+
+  const isBlacklisted = blacklistPatterns.some(regex => regex.test(normalized));
+  if (isBlacklisted) {
+    return { 
+      allowed: false, 
+      reason: "Restricted request. We only support food-related kitchen instructions." 
+    };
+  }
+
+  // 2. AI SPECIALIST VERIFICATION (For nuanced or disguised requests)
   const systemInstruction = `
-You are a food safety and kitchen policy validator for CRAVE, a premium food delivery platform.
-Analyze the user's cooking instruction provided below.
+You are a strict Food Delivery Kitchen Instruction Safety Validator.
+Your job is to allow ONLY food-related kitchen or delivery instructions. Anything unrelated to the ordered food must be rejected immediately.
 
-Rules for "ALLOWED":
-- Instruction is related to food preparation (e.g., "extra spicy", "no onions", "fresh ingredients", "no artificial colors", "cook well").
-- Instruction is related to food packaging (e.g., "pack separately", "eco-friendly packaging").
-- Instruction is about allergies (e.g., "peanut allergy", "gluten-free").
+Allowed instructions include:
+- less spicy, extra spicy, no onion, no garlic, less oil, extra cheese
+- separate packaging, add spoons, send tissues
+- make crispy, medium cooked
+- ring bell once, leave at door
 
-Rules for "REJECTED":
-- Instruction is for non-food items or errands (e.g., "buy cigarettes", "get a lighter", "pick up medicine", "bring alcohol").
-- Instruction is offensive, illegal, or completely unrelated to a restaurant kitchen.
-- Instruction is asking for free items that should be paid for (e.g., "add 2 extra burgers for free").
+Reject all non-food or unsafe requests including:
+1. Tobacco / Smoking / Vaping: cigarette, ciggarate, cigar, tobacco, t0bbaco, sutta, vape, hookah, nicotine.
+2. Alcohol / Drugs: alcohol, beer, whisky, vodka, charas, ganja, weed, drugs, cocaine, joint.
+   - Also detect misspellings, leetspeak (c1garette, t0b@cco, w33d), hidden spacing (g a n j a), and symbol replacements.
+3. Rider personal requests or errands:
+   - "buy something on the way", "bring pani puri", "bring water bottle", "buy medicine", "recharge mobile", "pick parcel", "stop at another shop", "bring chocolates", "roadside purchases".
+   - Examples: "aate aate pani puri le aana", "medical se dolo le aana", "raste se cold drink le lena", "extra paise dunga".
+4. Bribery or manipulation: "extra money dunga", "extra tip milega", "cash dunga bas le aana".
+5. Fraud or policy bypass attempts: "order cancel kar dena", "offline payment le lena", "cancel karke direct deliver kar", "app ke bahar deal karte hai".
+6. Illegal requests, abusive content, harmful instructions, threatening language, sexual content, or anything unrelated to food preparation/delivery.
+
+Rules:
+- Be extremely strict.
+- If instruction is not directly food-related -> reject.
+- If suspicious or unclear -> reject.
+- Never assume good intent. Detect hidden intent and disguised wording.
 
 Response Format:
 Respond with a JSON object exactly like this:
-{ "status": "ALLOWED" | "REJECTED", "reason": "Short explanation in 1 sentence if rejected, otherwise empty string" }
+{ "status": "ACCEPTED" | "REJECTED", "reason": "Short explanation in 1 sentence if rejected, otherwise empty string" }
 `;
 
   try {
-    const rawResponse = await callGemini(systemInstruction, `User Instruction: "${instruction}"`);
-    // Extract JSON from response (sometimes Gemini adds markdown code blocks)
+    const rawResponse = await callGemini(systemInstruction, `Analyze this instruction: "${instruction}"`);
     const jsonMatch = rawResponse.match(/\{.*\}/s);
-    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { status: "ALLOWED", reason: "" };
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { status: "ACCEPTED", reason: "" };
     
     return {
-      allowed: parsed.status === "ALLOWED",
-      reason: parsed.reason || "This request is not related to food preparation."
+      allowed: parsed.status === "ACCEPTED",
+      reason: parsed.reason || "This request is not supported by our kitchen partners."
     };
   } catch (error) {
     if (!error.message.includes("API key")) {
       console.error("Chef instruction validation failed:", error);
     }
-    // Graceful fallback: allow if API fails or is missing to prevent blocking user
+    // Safety fallback: If AI fails but didn't trigger our local blacklist, we allow it.
     return { allowed: true }; 
   }
 }

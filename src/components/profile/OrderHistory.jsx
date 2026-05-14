@@ -57,10 +57,38 @@ export default function OrderHistory() {
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
 
   // Fallback to active user's profile orderHistory if store is empty
-  let orders = orderHistory || [];
-  if (orders.length === 0 && user) {
-    orders = user.orderHistory || [];
+  let rawOrders = orderHistory || [];
+  if (rawOrders.length === 0 && user) {
+    rawOrders = user.orderHistory || [];
   }
+
+  // Split multi-restaurant orders into separate display cards for clarity
+  const orders = rawOrders.flatMap(order => {
+    if (!order.items || order.items.length === 0) return [order];
+
+    const itemsByRestaurant = order.items.reduce((acc, item) => {
+      const resName = item.restaurantName || item.restaurant || order.restaurantName || "Unknown Kitchen";
+      if (!acc[resName]) acc[resName] = [];
+      acc[resName].push(item);
+      return acc;
+    }, {});
+
+    const restaurantNames = Object.keys(itemsByRestaurant);
+    if (restaurantNames.length <= 1) return [order];
+
+    return restaurantNames.map((resName) => {
+      const items = itemsByRestaurant[resName];
+      return {
+        ...order,
+        // unique key for React rendering
+        uniqueDisplayKey: `${order.orderId}-${resName}`,
+        displayRestaurantName: resName,
+        displayItems: items,
+        displayImage: items[0]?.imageUrl || order.restaurantImageUrl || order.restaurantImage,
+        isSplitOrder: true
+      };
+    });
+  });
 
   // Instant PDF Receipt generator for historical orders
   const handlePrintReceipt = (order) => {
@@ -581,7 +609,7 @@ export default function OrderHistory() {
         <p className="text-[13px] text-zinc-400 dark:text-zinc-500 mt-1 font-medium">Manage details of previous gourmet selections, ratings, and instant reordering options.</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[680px] overflow-y-auto pr-3 -mr-3 custom-scrollbar">
         {orders.map((order) => {
           const liveStatus = getOrderLiveStatus(order);
           const { isActive, isDelivered, isCancelled, status } = liveStatus;
@@ -589,7 +617,7 @@ export default function OrderHistory() {
 
           return (
             <div 
-              key={order.orderId}
+              key={order.uniqueDisplayKey || order.orderId}
               className="p-5 md:p-6 bg-zinc-900/40 dark:bg-black/40 border border-zinc-100 dark:border-zinc-900 rounded-[24px] hover:bg-zinc-900/60 dark:hover:bg-zinc-900/30 transition-all group relative overflow-hidden"
             >
               {/* Main horizontal layout - screenshot style */}
@@ -598,25 +626,27 @@ export default function OrderHistory() {
                 {/* 1. Left: Restaurant Image */}
                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/[0.05] flex-shrink-0 shadow-sm">
                   <DishImage 
-                    src={order.restaurantImageUrl || order.restaurantImage} 
-                    alt={order.restaurantName}
-                    dishName={order.restaurantName}
+                    src={order.displayImage || order.restaurantImageUrl || order.restaurantImage} 
+                    alt={order.displayRestaurantName || order.restaurantName}
+                    dishName={order.displayRestaurantName || order.restaurantName}
                     className="w-full h-full object-cover"
                   />
                 </div>
 
                 {/* 2. Middle-Left: Info Stack */}
                 <div className="flex-1 space-y-2.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                      <ShoppingBag size={14} className="text-brand" />
+                      <span className="truncate max-w-[200px]">
+                        {(order.displayItems || order.items).map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {(() => {
-                      const names = [...new Set(order.items.map(i => i.restaurantName || i.restaurant).filter(Boolean))];
-                      const displayName = names.length > 0 ? names.join(', ') : order.restaurantName;
-                      return (
-                        <h4 className="text-base font-black text-zinc-900 dark:text-zinc-50 leading-tight">
-                          {displayName}
-                        </h4>
-                      );
-                    })()}
+                    <h4 className="text-base font-black text-zinc-900 dark:text-zinc-50 leading-tight">
+                      {order.displayRestaurantName || order.restaurantName}
+                    </h4>
                     
                     {isActive ? (
                       <span className="text-[9px] bg-brand/10 text-brand font-black uppercase tracking-widest px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
@@ -644,7 +674,7 @@ export default function OrderHistory() {
                   </p>
 
                   <p className="text-[13px] text-zinc-600 dark:text-zinc-300 font-medium truncate max-w-lg leading-relaxed">
-                    {order.items.map(i => `${i.name} (${i.quantity}x)`).join(', ')}
+                    {(order.displayItems || order.items).map(i => `${i.name} (${i.quantity}x)`).join(', ')}
                   </p>
 
                   <div className="flex items-center gap-3 pt-0.5">

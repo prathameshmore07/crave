@@ -14,8 +14,8 @@ export default function MembershipProfile() {
 
   if (!activeMembership) {
     return (
-      <div className="space-y-8 animate-fade-in">
-        <div className="border-b border-zinc-100 dark:border-zinc-900 pb-5">
+      <div className="space-y-6 animate-fade-in">
+        <div className="border-b border-zinc-100 dark:border-zinc-900 pb-4">
           <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-3">
             <Crown size={20} />
             Crave PRO
@@ -25,8 +25,8 @@ export default function MembershipProfile() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/30 rounded-2xl">
+        <div className="space-y-3">
+          <div className="p-5 bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/30 rounded-2xl">
             <div className="flex items-center gap-4 mb-4">
               <div className="text-4xl">✨</div>
               <div>
@@ -102,9 +102,9 @@ export default function MembershipProfile() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="border-b border-zinc-100 dark:border-zinc-900 pb-5">
+      <div className="border-b border-zinc-100 dark:border-zinc-900 pb-4">
         <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-3">
           <Crown size={20} className="text-orange-500" />
           Crave PRO
@@ -115,30 +115,23 @@ export default function MembershipProfile() {
       </div>
 
       {/* Active Status Card */}
-      <div className="p-6 bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/30 rounded-2xl">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start gap-4">
-            <div className="text-4xl">{plan.icon}</div>
+      <div className="p-4 bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/30 rounded-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">{plan.icon}</div>
             <div>
-              <h4 className="font-bold text-zinc-900 dark:text-white text-lg">
+              <h4 className="font-black text-zinc-900 dark:text-white text-base">
                 {plan.name}
               </h4>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Active • {activeMembership.cycle} subscription
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-bold">
+                Active • {activeMembership.cycle}
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-semibold text-green-600 dark:text-green-400">
-                  Active Now
-                </span>
-              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-orange-500">
+            <div className="text-xl font-black text-orange-500">
               ₹{activeMembership.price}
             </div>
-            <p className="text-xs text-zinc-500 font-medium">Paid</p>
           </div>
         </div>
       </div>
@@ -159,7 +152,7 @@ export default function MembershipProfile() {
       )}
 
       {/* Membership Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {/* Start Date */}
         <div className="p-4 bg-white/50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100/50 dark:border-zinc-800/50">
           <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
@@ -190,16 +183,18 @@ export default function MembershipProfile() {
         </div>
 
         {/* Estimated savings this term */}
-        <div className="p-4 bg-emerald-500/5 dark:bg-emerald-950/20 rounded-lg border border-emerald-200/50 dark:border-emerald-900/40 md:col-span-2">
-          <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-            Estimated savings this term
+        <div className="p-3 bg-emerald-500/5 dark:bg-emerald-950/20 rounded-lg border border-emerald-200/50 dark:border-emerald-900/40 col-span-2">
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
+            Term Savings
           </p>
-          <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
-            ₹{savingsEstimate.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-zinc-500 mt-1">
-            Illustrative total based on ~₹2,000/month spend and your plan discount.
-          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-xl font-black text-emerald-700 dark:text-emerald-400">
+              ₹{savingsEstimate.toLocaleString()}
+            </p>
+            <p className="text-[9px] text-zinc-500 font-medium">
+              Based on your spend pattern.
+            </p>
+          </div>
         </div>
 
         {/* Billing Cycle */}

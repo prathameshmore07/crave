@@ -37,9 +37,16 @@ export default function CartDrawer() {
   const isMemberActive = useMembershipStore((state) => state.isActive());
   const { finalTotal } = getCartTotals();
 
+  const handleProceedWithoutNote = () => {
+    useCartStore.getState().setCookingInstructions("");
+    setValidationStatus(null);
+    setCartOpen(false);
+    navigate('/checkout');
+  };
+
   const handleCheckoutRedirect = async () => {
-    // If there are kitchen notes, validate them via Gemini AI before proceeding
-    if (cookingInstructions && cookingInstructions.trim().length > 2) {
+    // If there are kitchen notes, validate them before proceeding
+    if (cookingInstructions && cookingInstructions.trim().length >= 2) {
       setIsValidating(true);
       
       try {
@@ -48,9 +55,9 @@ export default function CartDrawer() {
         
         if (!validation.allowed) {
           setValidationStatus('rejected');
-          toast.error("Invalid Kitchen Instruction", {
+          toast.error("Instruction Rejected", {
             description: validation.reason,
-            duration: 5000,
+            duration: 4000,
             position: 'top-center'
           });
           return; // Block checkout
@@ -115,7 +122,8 @@ export default function CartDrawer() {
 
             {/* Cart Body */}
             {cartItems.length > 0 ? (
-              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              <>
+                <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 {/* Active Restaurant Header & Delivery ETA Badge */}
                 {/* Active Restaurant Header & Delivery ETA Badge */}
                 {(() => {
@@ -143,11 +151,31 @@ export default function CartDrawer() {
                   );
                 })()}
 
-                {/* Items List */}
-                <div className="space-y-1">
-                  {cartItems.map((item, index) => (
-                    <CartItem key={`${item.id}-${index}`} item={item} />
-                  ))}
+                {/* Items List Grouped by Restaurant */}
+                <div className="space-y-6">
+                  {(() => {
+                    const groupedItems = cartItems.reduce((acc, item) => {
+                      const resName = item.restaurantName || "Premium Kitchen";
+                      if (!acc[resName]) acc[resName] = [];
+                      acc[resName].push(item);
+                      return acc;
+                    }, {});
+
+                    return Object.entries(groupedItems).map(([resName, items]) => (
+                      <div key={resName} className="space-y-2.5">
+                        <div className="flex items-center gap-3 px-1">
+                          <div className="h-[1px] flex-1 bg-black/[0.04] dark:bg-white/[0.04]" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-brand/70">{resName}</span>
+                          <div className="h-[1px] flex-1 bg-black/[0.04] dark:bg-white/[0.04]" />
+                        </div>
+                        <div className="space-y-1">
+                          {items.map((item, idx) => (
+                            <CartItem key={`${item.id}-${idx}`} item={item} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  })()}
                 </div>
 
                 {/* Cooking Instructions / Kitchen Notes */}
@@ -269,10 +297,77 @@ export default function CartDrawer() {
                 {/* Bill Breakdown */}
                 <BillSummary />
               </div>
+
+              {/* Footer Pay Button */}
+              <div className="p-5 border-t border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-dark-surface flex flex-col gap-2">
+                
+                {/* 1. Instruction Rejected Message (if applicable) */}
+                {validationStatus === 'rejected' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 mb-2 rounded-xl bg-red-500/10 border border-red-500/20 text-center space-y-2"
+                  >
+                    <p className="text-[10px] font-bold text-red-600 dark:text-red-400">Your instruction was rejected by our safety system.</p>
+                    <button
+                      onClick={handleProceedWithoutNote}
+                      className="text-[10px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 underline decoration-brand underline-offset-4"
+                    >
+                      Proceed without this note
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* 2. Membership Promo (only for non-members) */}
+                {!isMemberActive && (
+                  <button
+                    onClick={() => {
+                      setCartOpen(false);
+                      navigate('/membership');
+                    }}
+                    className="w-full p-2.5 mb-1 bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-amber-500/40 transition-all group text-left"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                      <Crown size={16} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Get Crave PRO</span>
+                      <span className="text-[9px] text-amber-700/70 dark:text-amber-300/60 font-semibold">Member food discounts & free delivery</span>
+                    </div>
+                    <ArrowRight size={12} className="text-amber-500 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                  </button>
+                )}
+
+                {/* 3. PRO Badge (only for active members) */}
+                {isMemberActive && (
+                  <div className="w-full px-3 py-1.5 mb-1 bg-amber-500/5 border border-amber-500/10 rounded-lg flex items-center gap-2 text-[9px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">
+                    <Crown size={11} className="text-amber-500" />
+                    PRO member discount applied
+                  </div>
+                )}
+
+                {/* 4. Main Checkout Button */}
+                <button
+                  onClick={handleCheckoutRedirect}
+                  disabled={isValidating || validationStatus === 'rejected'}
+                  className={`h-12 w-full bg-zinc-950 hover:bg-black text-white text-sm font-bold rounded-xl shadow-lg flex items-center justify-between px-5 transition-all cursor-pointer group focus:outline-none active:scale-[0.98] ${
+                    (isValidating || validationStatus === 'rejected') ? 'opacity-50 cursor-not-allowed grayscale' : ''
+                  }`}
+                >
+                  <div className="text-left">
+                    <span className="text-[10px] uppercase font-bold tracking-wider block opacity-75">Payable Total</span>
+                    <span className="text-sm font-black">{formatPrice(finalTotal)}</span>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-sm font-bold">
+                    {isValidating ? "Validating..." : "Proceed to Pay"}
+                    <ArrowRight size={16} className={isValidating ? "animate-pulse" : "group-hover:translate-x-1 transition-transform"} />
+                  </span>
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-6">
                 <div className="relative">
-                  {/* Floating Basket Graphic */}
                   <div className="w-20 h-20 bg-brand/5 dark:bg-brand/10 rounded-full flex items-center justify-center text-brand animate-pulse">
                     <ShoppingBag size={40} strokeWidth={1.5} />
                   </div>
@@ -293,52 +388,6 @@ export default function CartDrawer() {
                   className="h-11 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-colors cursor-pointer"
                 >
                   Start Shopping
-                </button>
-              </div>
-            )}
-
-            {/* Footer Pay Button */}
-            {cartItems.length > 0 && (
-              <div className="p-4 border-t border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-dark-surface flex flex-col gap-2">
-                
-                {/* Membership promo for non-members */}
-                {!isMemberActive && (
-                  <button
-                    onClick={() => {
-                      setCartOpen(false);
-                      navigate('/membership');
-                    }}
-                    className="w-full p-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-xl flex items-center gap-2.5 cursor-pointer hover:border-amber-500/40 transition-all group text-left"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                      <Crown size={16} className="text-amber-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider block">Get Crave PRO</span>
-                      <span className="text-[9px] text-amber-700/70 dark:text-amber-300/60 font-semibold">Member food discounts &amp; free delivery</span>
-                    </div>
-                    <ArrowRight size={12} className="text-amber-500 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
-                  </button>
-                )}
-
-                {isMemberActive && (
-                  <div className="w-full px-3 py-1.5 bg-amber-500/5 border border-amber-500/10 rounded-lg flex items-center gap-2 text-[9px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider">
-                    <Crown size={11} className="text-amber-500" />
-                    PRO member discount applied
-                  </div>
-                )}
-                <button
-                  onClick={handleCheckoutRedirect}
-                  className="h-12 w-full bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-xl shadow-md flex items-center justify-between px-5 transition-colors cursor-pointer group focus:outline-none"
-                >
-                  <div className="text-left">
-                    <span className="text-[10px] uppercase font-bold tracking-wider block opacity-75">Payable Total</span>
-                    <span className="text-sm font-black">{formatPrice(finalTotal)}</span>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-sm font-bold">
-                    {isValidating ? "Validating..." : "Proceed to Pay"}
-                    <ArrowRight size={16} className={isValidating ? "animate-pulse" : "group-hover:translate-x-1 transition-transform"} />
-                  </span>
                 </button>
               </div>
             )}

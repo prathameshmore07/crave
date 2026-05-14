@@ -17,12 +17,14 @@ export default function FavRestaurants() {
 
   if (favs.length === 0) {
     return (
-      <div className="text-center py-12 px-4 space-y-3 max-w-sm mx-auto">
-        <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-dark-surface border border-black/[0.04] dark:border-white/[0.04] text-gray-400 flex items-center justify-center mx-auto">
-          <Heart size={20} />
+      <div className="flex flex-col items-center justify-center text-center py-24 px-4 space-y-4 max-w-md mx-auto min-h-[400px] animate-fade-in">
+        <div className="w-14 h-14 rounded-full bg-zinc-50 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.04] text-zinc-400 flex items-center justify-center mx-auto shadow-sm">
+          <Heart size={24} className="opacity-80" />
         </div>
-        <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">No Favourites Yet</h4>
-        <p className="text-xs text-gray-500">Tap the heart button on any restaurant card to save your top food spots here.</p>
+        <div className="space-y-1.5">
+          <h4 className="text-sm font-black text-zinc-800 dark:text-zinc-100 uppercase tracking-wider">No Favourites Yet</h4>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium leading-relaxed">Tap the heart button on any restaurant card to save your top food spots here for instant access.</p>
+        </div>
       </div>
     );
   }

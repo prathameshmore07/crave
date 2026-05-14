@@ -200,17 +200,17 @@ export default function Profile() {
   const favoritesCount = user?.favorites?.length || 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 pb-24 space-y-10 page-enter select-none">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 pb-24 space-y-6 page-enter select-none">
       
       {/* 1. Profile Premium Hero Header */}
-      <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-100 dark:border-zinc-900 rounded-[28px] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center gap-8 relative overflow-hidden text-left">
+      <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-100 dark:border-zinc-900 rounded-[28px] p-5 md:p-6 flex flex-col lg:flex-row justify-between items-center gap-8 relative overflow-hidden text-left">
         <div className="absolute top-0 right-0 w-80 h-80 bg-brand/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         
         {/* User Card Presentation */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 text-center sm:text-left z-10 flex-1 w-full">
           {/* Avatar Sphere with clean inline indicator */}
           <div className="relative shrink-0">
-            <div className={`w-24 h-24 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-3xl font-black tracking-normal shadow-sm border border-zinc-200 dark:border-zinc-850 animate-in fade-in duration-500`} id="dynamic-avatar-profile">
+            <div className={`w-20 h-20 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-2xl font-black tracking-normal shadow-sm border border-zinc-200 dark:border-zinc-850 animate-in fade-in duration-500`} id="dynamic-avatar-profile">
               {userInitials}
             </div>
             {/* Subtle Active indicator dot */}
@@ -219,7 +219,7 @@ export default function Profile() {
  
           <div className="space-y-3 mt-1 flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none truncate">{memberName}</h1>
+              <h1 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none truncate">{memberName}</h1>
               {isMemberActive && activeMembership && (
                 <span 
                   onClick={() => setActiveTab('membership')}
@@ -240,37 +240,37 @@ export default function Profile() {
               {/* Stat 1: Orders */}
               <div 
                 onClick={() => setActiveTab('orders')}
-                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-3 py-1.5 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[80px]"
               >
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Orders Placed</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{ordersCount}</span>
+                <span className="text-xs font-black text-zinc-800 dark:text-zinc-100">{ordersCount}</span>
               </div>
               
               {/* Stat 2: Reviews */}
               <div 
                 onClick={() => setActiveTab('reviews')}
-                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-3 py-1.5 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[80px]"
               >
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">My Reviews</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{reviewsCount}</span>
+                <span className="text-xs font-black text-zinc-800 dark:text-zinc-100">{reviewsCount}</span>
               </div>
  
               {/* Stat 3: Saved addresses */}
               <div 
                 onClick={() => setActiveTab('addresses')}
-                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-3 py-1.5 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[80px]"
               >
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Saved Places</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{savedPlacesCount}</span>
+                <span className="text-xs font-black text-zinc-800 dark:text-zinc-100">{savedPlacesCount}</span>
               </div>
  
               {/* Stat 4: Favorites */}
               <div 
                 onClick={() => setActiveTab('favorites')}
-                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-4 py-2 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[90px]"
+                className="bg-white dark:bg-zinc-950/60 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800/60 px-3 py-1.5 rounded-xl text-center cursor-pointer transition-all shrink-0 min-w-[80px]"
               >
                 <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider block">Favourites</span>
-                <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{favoritesCount}</span>
+                <span className="text-xs font-black text-zinc-800 dark:text-zinc-100">{favoritesCount}</span>
               </div>
             </div>
           </div>
@@ -279,7 +279,7 @@ export default function Profile() {
         {/* Dynamic Membership Info / Upgrade Card Widget */}
         {isMemberActive && activeMembership ? (
           // show real membership activation details and summary
-          <div className="w-full lg:w-80 bg-zinc-900 text-zinc-100 border border-zinc-800 p-5 rounded-[22px] space-y-4 z-10 self-stretch flex flex-col justify-between shadow-lg animate-in fade-in duration-300">
+          <div className="w-full lg:w-72 bg-zinc-900 text-zinc-100 border border-zinc-800 p-4 rounded-[22px] space-y-3 z-10 self-stretch flex flex-col justify-between shadow-lg animate-in fade-in duration-300">
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
@@ -289,12 +289,12 @@ export default function Profile() {
                   {activeMembership.type === 'student' ? 'Student' : 'Pro'}
                 </span>
               </div>
-              <h4 className="text-md font-black tracking-tight text-white leading-tight">
+              <h4 className="text-sm font-black tracking-tight text-white leading-tight">
                 {activeMembership.type === 'student' ? 'STUDENT PREMIUM' : 'CRAVE PRO'}
               </h4>
             </div>
 
-            <div className="space-y-2 border-t border-zinc-800 pt-3 text-xs font-semibold">
+            <div className="space-y-1.5 border-t border-zinc-800 pt-2.5 text-[11px] font-semibold">
               <div className="flex justify-between text-zinc-450">
                 <span>Renewal Date</span>
                 <span className="text-zinc-200">
@@ -368,7 +368,7 @@ export default function Profile() {
                     setActiveTab(tab.id);
                     setSearchParams({ tab: tab.id });
                   }}
-                  className={`py-3 px-4 rounded-xl flex items-center gap-3.5 transition-all text-left outline-none cursor-pointer select-none shrink-0 lg:w-full ${
+                  className={`py-2.5 px-4 rounded-xl flex items-center gap-3.5 transition-all text-left outline-none cursor-pointer select-none shrink-0 lg:w-full ${
                     isActive 
                       ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 font-bold shadow-md' 
                       : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -376,10 +376,7 @@ export default function Profile() {
                 >
                   <Icon size={16} className={`${isActive ? 'scale-110' : 'opacity-80'}`} />
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[13px] tracking-tight">{tab.label}</span>
-                    <span className={`text-[10px] font-medium leading-none mt-0.5 hidden lg:block ${isActive ? 'text-zinc-300 dark:text-zinc-500' : 'text-zinc-400'}`}>
-                      {tab.desc}
-                    </span>
+                    <span className="text-[13px] font-black tracking-tight">{tab.label}</span>
                   </div>
                 </button>
               );
@@ -401,7 +398,7 @@ export default function Profile() {
         </div>
 
         {/* RIGHT COLUMN: Active Board Section Container */}
-        <div className="col-span-1 lg:col-span-3 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[32px] p-6 md:p-8 shadow-xs min-h-[500px] transition-all relative">
+        <div className="col-span-1 lg:col-span-3 bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-[32px] p-5 md:p-6 shadow-xs min-h-[500px] transition-all relative">
           
           {/* TAB 1: Account Edit settings */}
           {activeTab === 'account' && (
@@ -599,8 +596,8 @@ export default function Profile() {
                 {/* Header and sorting toolbar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-900 pb-5">
                   <div>
-                    <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Verified Culinary Audits ({sortedReviews.length})</h3>
-                    <p className="text-[13px] text-zinc-400 mt-1 font-medium">Ratings and feedback reports logged under your student profile.</p>
+                    <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-50 tracking-tight">My Reviews ({sortedReviews.length})</h3>
+                    <p className="text-[13px] text-zinc-400 mt-1 font-medium">Ratings and feedback history logged under your student profile.</p>
                   </div>
                   {sortedReviews.length > 0 && (
                     <div className="flex items-center gap-2">

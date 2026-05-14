@@ -128,7 +128,11 @@ export default function Checkout() {
     // wait for order persistence before navigation
     // Save order in authStore OrderHistory and orderStore
     addOrder(newOrder);
-    useOrderStore.getState().setActiveOrder(newOrder);
+    const orderStore = useOrderStore.getState();
+    orderStore.setActiveOrder(newOrder);
+
+    // Start simulation for status progression (Preparing -> Picked Up -> Delivered)
+    orderStore.startSimulation(newOrder.orderId);
 
     // Mark order as placed to prevent empty-cart homepage redirect
     orderPlacedRef.current = true;
@@ -136,9 +140,10 @@ export default function Checkout() {
     setCreatedOrder(newOrder);
     setConfirmedTotal(orderFinalTotal);
 
-    // fullscreen order processing flow — jump to processing stage FIRST
-    // DO NOT clear cart here — cart will be cleared AFTER tracking redirect
-    // remove homepage redirect after checkout by ensuring step 3 is set before any cart changes
+    // Clear cart immediately to avoid stale data if user navigates away
+    clearCart();
+
+    // jump to processing stage
     setCheckoutStep(3);
   };
 
@@ -248,20 +253,36 @@ export default function Checkout() {
                 })()}
               </div>
 
-              {/* Items Summary Details list */}
-              <div className="divide-y divide-black/[0.04] max-h-48 overflow-y-auto pr-1">
-                {cartItems.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="py-2.5 flex justify-between items-start text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    <div className="min-w-0 pr-4">
-                      <div className="truncate flex items-center gap-1">
-                        {item.isVeg ? <div className="veg-dot flex-shrink-0"></div> : <div className="nonveg-dot flex-shrink-0"></div>}
-                        {item.name}
+              {/* Items Summary Details list grouped by restaurant */}
+              <div className="max-h-56 overflow-y-auto pr-1 space-y-4">
+                {(() => {
+                  const groupedItems = cartItems.reduce((acc, item) => {
+                    const resName = item.restaurantName || "Kitchen";
+                    if (!acc[resName]) acc[resName] = [];
+                    acc[resName].push(item);
+                    return acc;
+                  }, {});
+
+                  return Object.entries(groupedItems).map(([resName, items]) => (
+                    <div key={resName} className="space-y-1.5">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-brand/60 px-1">{resName}</div>
+                      <div className="divide-y divide-black/[0.04]">
+                        {items.map((item, idx) => (
+                          <div key={`${item.id}-${idx}`} className="py-2 flex justify-between items-start text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            <div className="min-w-0 pr-4">
+                              <div className="truncate flex items-center gap-1">
+                                {item.isVeg ? <div className="veg-dot flex-shrink-0"></div> : <div className="nonveg-dot flex-shrink-0"></div>}
+                                {item.name}
+                              </div>
+                              <span className="text-[10px] text-gray-400 font-medium block pl-4">Qty: {item.quantity}</span>
+                            </div>
+                            <span>{formatPrice(item.price * item.quantity)}</span>
+                          </div>
+                        ))}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium block pl-4">Qty: {item.quantity}</span>
                     </div>
-                    <span>{formatPrice(item.price * item.quantity)}</span>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
 
               {/* Bill Details */}

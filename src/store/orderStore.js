@@ -154,6 +154,27 @@ export const useOrderStore = create((set, get) => {
       removeUserItem('active_order');
       removeUserItem('tracking_stage_idx');
       set({ activeOrder: null, trackingStageIdx: 0 });
+    },
+
+    // Realistic lifecycle simulation for demo purposes
+    startSimulation: (orderId) => {
+      // Stage 1: Order Confirmed (already set at creation)
+      
+      // Stage 2: Food is being prepared (5s)
+      setTimeout(() => {
+        get().setTrackingStageIdx(1);
+      }, 5000);
+
+      // Stage 3: Rider has picked up (12s)
+      setTimeout(() => {
+        get().setTrackingStageIdx(2);
+      }, 12000);
+
+      // Stage 4: Delivered (20s)
+      setTimeout(() => {
+        get().setTrackingStageIdx(3);
+        get().setOrderDelivered(orderId);
+      }, 20000);
     }
   };
 });
