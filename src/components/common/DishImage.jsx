@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { menuItemImages } from '../../data/restaurants';
 
 // Robust, high-quality category-specific fallback images to guarantee visual consistency
 export function getFoodCategoryFallback(name, category) {
+  // 0. Check for exact match in our master item images database first (Original restaurant image)
+  if (name && menuItemImages[name]) {
+    return menuItemImages[name];
+  }
+
   const lowercaseName = (name || "").toLowerCase();
   const lowercaseCategory = (category || "").toLowerCase();
 
@@ -17,7 +23,7 @@ export function getFoodCategoryFallback(name, category) {
       return "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=400&auto=format&fit=crop&q=80"; // Paneer Dosa
     }
     if (lowercaseName.includes("mysore")) {
-      return "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?w=400&auto=format&fit=crop&q=80"; // Mysore Masala Dosa
+      return "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=80"; // Mysore Masala Dosa
     }
     return "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=80"; // Default Dosa fallback
   }
@@ -59,9 +65,12 @@ export function getFoodCategoryFallback(name, category) {
     return "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&auto=format&fit=crop&q=80"; // Veg Burger
   }
 
-  // Pizza / Continental
+  // Pizza / Continental / Pasta
   if (lowercaseName.includes("pizza")) {
     return "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=80";
+  }
+  if (lowercaseName.includes("pasta") || lowercaseName.includes("alfredo") || lowercaseName.includes("penne")) {
+    return "https://images.unsplash.com/photo-1645112481338-35623bb37f62?w=400&auto=format&fit=crop&q=80"; // Pasta image
   }
   if (lowercaseName.includes("fries") || lowercaseName.includes("chips")) {
     return "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=80";
@@ -72,7 +81,7 @@ export function getFoodCategoryFallback(name, category) {
     return "https://images.unsplash.com/photo-1606491048563-eb955f4623e1?w=400&auto=format&fit=crop&q=80";
   }
   if (lowercaseName.includes("vada pav") || lowercaseName.includes("samosa") || lowercaseName.includes("chaat") || lowercaseName.includes("puri") || lowercaseName.includes("bhature") || lowercaseCategory.includes("street")) {
-    return "https://images.unsplash.com/photo-1601050690597-df056fb4ce78?w=400&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=400&auto=format&fit=crop&q=80";
   }
 
   // Biryani

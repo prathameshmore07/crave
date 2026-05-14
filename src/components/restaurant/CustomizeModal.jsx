@@ -56,7 +56,8 @@ export default function CustomizeModal({ item, restaurant, isOpen, onClose }) {
       id: restaurant.id,
       name: restaurant.name,
       locality: restaurant.locality,
-      imageUrl: restaurant.imageUrl
+      imageUrl: restaurant.imageUrl,
+      city: restaurant.city
     };
 
     const customizedItem = {

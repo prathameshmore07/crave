@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
+import { validateChefInstruction } from '../../services/geminiService';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUiStore } from '../../store/uiStore';
@@ -30,11 +32,37 @@ export default function CartDrawer() {
   const addItem = useCartStore((state) => state.addItem);
   const getCartTotals = useCartStore((state) => state.getCartTotals);
   const cookingInstructions = useCartStore((state) => state.cookingInstructions);
-
-  const { finalTotal } = getCartTotals();
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationStatus, setValidationStatus] = useState(null); // 'allowed' | 'rejected' | null
   const isMemberActive = useMembershipStore((state) => state.isActive());
+  const { finalTotal } = getCartTotals();
 
-  const handleCheckoutRedirect = () => {
+  const handleCheckoutRedirect = async () => {
+    // If there are kitchen notes, validate them via Gemini AI before proceeding
+    if (cookingInstructions && cookingInstructions.trim().length > 2) {
+      setIsValidating(true);
+      
+      try {
+        const validation = await validateChefInstruction(cookingInstructions);
+        setIsValidating(false);
+        
+        if (!validation.allowed) {
+          setValidationStatus('rejected');
+          toast.error("Invalid Kitchen Instruction", {
+            description: validation.reason,
+            duration: 5000,
+            position: 'top-center'
+          });
+          return; // Block checkout
+        } else {
+          setValidationStatus('allowed');
+        }
+      } catch (err) {
+        setIsValidating(false);
+        console.error("Validation error:", err);
+      }
+    }
+
     setCartOpen(false);
     navigate('/checkout');
   };
@@ -89,19 +117,31 @@ export default function CartDrawer() {
             {cartItems.length > 0 ? (
               <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 {/* Active Restaurant Header & Delivery ETA Badge */}
-                {activeRestaurant && (
-                  <div className="pb-3 border-b border-black/[0.05] dark:border-white/[0.05] flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-[10px] font-black uppercase tracking-wider text-gray-400">Ordering From</h3>
-                      <p className="text-xs text-brand font-extrabold truncate">{activeRestaurant.name}</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate">{activeRestaurant.locality}</p>
+                {/* Active Restaurant Header & Delivery ETA Badge */}
+                {(() => {
+                  const uniqueRestaurants = [...new Set(cartItems.map(item => item.restaurantName).filter(Boolean))];
+                  const isMulti = uniqueRestaurants.length > 1;
+                  
+                  return (
+                    <div className="pb-3 border-b border-black/[0.05] dark:border-white/[0.05] flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                          {isMulti ? "Ordering From Multiple Kitchens" : "Ordering From"}
+                        </h3>
+                        <p className="text-xs text-brand font-extrabold leading-tight">
+                          {isMulti ? uniqueRestaurants.join(", ") : (activeRestaurant?.name || uniqueRestaurants[0])}
+                        </p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                          {isMulti ? `${uniqueRestaurants.length} Distinct Restaurants` : (activeRestaurant?.locality || "Campus Kitchens")}
+                        </p>
+                      </div>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/10 text-right shrink-0">
+                        <span className="text-[8px] uppercase font-bold tracking-wider block opacity-75 leading-none mb-0.5">Delivery ETA</span>
+                        <span className="text-[11px] font-black leading-none">{isMulti ? "35-45 mins" : "25-35 mins"}</span>
+                      </div>
                     </div>
-                    <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-650 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/10 text-right shrink-0">
-                      <span className="text-[8px] uppercase font-bold tracking-wider block opacity-75 leading-none mb-0.5">Delivery ETA</span>
-                      <span className="text-[11px] font-black leading-none">25-35 mins</span>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Items List */}
                 <div className="space-y-1">
@@ -112,14 +152,65 @@ export default function CartDrawer() {
 
                 {/* Cooking Instructions / Kitchen Notes */}
                 <div className="space-y-2 border-b border-black/[0.05] dark:border-white/[0.05] pb-4">
-                  <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Cooking Instructions</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Cooking Instructions</span>
+                    </div>
+                    
+                    {/* AI Validation Badge */}
+                    <AnimatePresence>
+                      {validationStatus && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+                            validationStatus === 'allowed' 
+                              ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                              : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                          }`}
+                        >
+                          <div className={`w-1 h-1 rounded-full ${validationStatus === 'allowed' ? 'bg-emerald-500' : 'bg-rose-500'} animate-pulse`} />
+                          AI System: {validationStatus === 'allowed' ? 'Accepted' : 'Rejected'}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
+                  
                   <textarea
                     value={cookingInstructions || ""}
-                    onChange={(e) => useCartStore.getState().setCookingInstructions(e.target.value)}
+                    onChange={(e) => {
+                      useCartStore.getState().setCookingInstructions(e.target.value);
+                      if (validationStatus) setValidationStatus(null);
+                    }}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (cookingInstructions?.trim().length > 2) {
+                          setIsValidating(true);
+                          const check = await validateChefInstruction(cookingInstructions);
+                          setIsValidating(false);
+                          setValidationStatus(check.allowed ? 'allowed' : 'rejected');
+                          if (!check.allowed) toast.error(check.reason);
+                        }
+                      }
+                    }}
+                    onBlur={async () => {
+                      if (cookingInstructions && cookingInstructions.trim().length > 5) {
+                        setIsValidating(true);
+                        const check = await validateChefInstruction(cookingInstructions);
+                        setIsValidating(false);
+                        setValidationStatus(check.allowed ? 'allowed' : 'rejected');
+                        if (!check.allowed) {
+                          toast.warning("Instruction Rejected", { description: check.reason });
+                        }
+                      }
+                    }}
                     placeholder="Any kitchen notes? (e.g., Make it extra spicy, avoid onions, no cutlery needed)"
-                    className="w-full min-h-[54px] bg-gray-55 dark:bg-dark-bg/30 border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-3 text-xs text-gray-755 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand resize-none font-medium"
+                    className={`w-full min-h-[54px] bg-gray-55 dark:bg-dark-bg/30 border ${
+                      validationStatus === 'rejected' ? 'border-rose-500/50 bg-rose-500/[0.02]' : 
+                      isValidating ? 'border-brand/30 animate-pulse' : 'border-black/[0.05] dark:border-white/[0.05]'
+                    } rounded-xl p-3 text-xs text-gray-755 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-brand focus:border-brand resize-none font-medium transition-all`}
                     maxLength={150}
                   />
                 </div>
@@ -245,8 +336,8 @@ export default function CartDrawer() {
                     <span className="text-sm font-black">{formatPrice(finalTotal)}</span>
                   </div>
                   <span className="flex items-center gap-1.5 text-sm font-bold">
-                    Proceed to Pay
-                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    {isValidating ? "Validating..." : "Proceed to Pay"}
+                    <ArrowRight size={16} className={isValidating ? "animate-pulse" : "group-hover:translate-x-1 transition-transform"} />
                   </span>
                 </button>
               </div>

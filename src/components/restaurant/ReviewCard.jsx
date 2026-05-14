@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, ThumbsUp, ShieldCheck } from 'lucide-react';
 import { menuItemImages } from '../../data/restaurants';
 import DishImage from '../common/DishImage';
+import { useAuthStore } from '../../store/authStore';
 
 // Resolve the item's Unsplash image or high-quality keyword fallback
 function getItemImage(name) {
@@ -81,6 +82,9 @@ export default function ReviewCard({ review }) {
   });
   const [reacted, setReacted] = useState({ laugh: false, heart: false, fire: false });
 
+  const currentUser = useAuthStore((state) => state.user);
+  const isOwnReview = (currentUser && review.userName === currentUser.name) || review.isUserReview;
+
   const handleHelpfulClick = () => {
     if (hasVoted) {
       setHelpfulCount(prev => prev - 1);
@@ -112,11 +116,16 @@ export default function ReviewCard({ review }) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex gap-3 items-start min-w-0">
           <div className="w-10 h-10 rounded-full bg-brand/10 text-brand font-black text-xs flex items-center justify-center border border-brand/20 flex-shrink-0">
-            {review.avatar || (review.userName ? review.userName[0].toUpperCase() : "U")}
+            {isOwnReview ? (currentUser?.name?.[0]?.toUpperCase() || "U") : (review.avatar || (review.userName ? review.userName[0].toUpperCase() : "U"))}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h4 className="text-xs font-extrabold text-gray-800 dark:text-gray-100">{review.userName}</h4>
+              <h4 className="text-xs font-extrabold text-gray-800 dark:text-gray-100">
+                {isOwnReview ? (currentUser?.name || review.userName) : review.userName}
+                {isOwnReview && (
+                  <span className="ml-1 text-brand text-[10px] font-black tracking-tighter opacity-80">(you)</span>
+                )}
+              </h4>
               
               {/* Verified Order Badge */}
               {(review.isVerified || review.isUserReview) && (

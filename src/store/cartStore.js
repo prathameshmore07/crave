@@ -3,11 +3,19 @@ import { getUserItem, getUserJsonItem, setUserItem, removeUserItem } from '../ut
 import useMembershipStore from './membershipStore';
 
 const sanitizeCartItems = (items) => {
-  return (items || []).map(item => ({
-    ...item,
-    imageUrl: item.imageUrl || item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
-    selectedCustomizations: item.selectedCustomizations || []
-  }));
+  const legacyPlaceholder = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c";
+  return (items || []).map(item => {
+    let currentImg = item.imageUrl || item.image || "";
+    // If the image is the legacy hardcoded placeholder, clear it to allow dynamic fallback
+    if (currentImg.includes(legacyPlaceholder)) {
+      currentImg = "";
+    }
+    return {
+      ...item,
+      imageUrl: currentImg,
+      selectedCustomizations: item.selectedCustomizations || []
+    };
+  });
 };
 
 export const useCartStore = create((set, get) => {
@@ -64,40 +72,47 @@ export const useCartStore = create((set, get) => {
 
     addItem: (item, restaurantInfo) => {
       set((state) => {
-        // Safe deep/shallow mapping of current cart items to avoid references sharing
+        // Safe deep mapping of current cart items
         let newItems = state.items.map(i => ({
           ...i,
           selectedCustomizations: i.selectedCustomizations || []
         }));
         
-        let activeRest = state.restaurant || restaurantInfo;
-
         const incomingCustomizations = item.selectedCustomizations || [];
 
+        // Check for existing item with SAME customizations AND SAME restaurant
         const existingItemIndex = newItems.findIndex(i => 
           i.id === item.id && 
+          i.restaurantId === restaurantInfo.id &&
           JSON.stringify(i.selectedCustomizations) === JSON.stringify(incomingCustomizations)
         );
 
         const sanitizedItem = {
           ...item,
-          imageUrl: item.imageUrl || item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
-          selectedCustomizations: incomingCustomizations
+          imageUrl: item.imageUrl || item.image || "",
+          selectedCustomizations: incomingCustomizations,
+          // Store restaurant context directly on the item for multi-restaurant support
+          restaurantId: restaurantInfo.id,
+          restaurantName: restaurantInfo.name,
+          restaurantImageUrl: restaurantInfo.imageUrl,
+          locality: restaurantInfo.locality || "Campus",
+          restaurantCity: restaurantInfo.city || restaurantInfo.restaurantCity || ""
         };
 
         if (existingItemIndex > -1) {
-          // Update quantity on a completely new object reference
           newItems[existingItemIndex] = {
             ...newItems[existingItemIndex],
             quantity: newItems[existingItemIndex].quantity + 1
           };
         } else {
-          // Push a completely unique object reference with unique keys
           newItems.push({ 
             ...sanitizedItem, 
             quantity: 1
           });
         }
+
+        // Set the primary restaurant to the latest added one for global context fallbacks
+        const activeRest = restaurantInfo;
 
         // Save to user-scoped localStorage
         setUserItem('cart_items', newItems);
@@ -119,7 +134,7 @@ export const useCartStore = create((set, get) => {
         
         const sanitizedPending = {
           ...pendingItem,
-          imageUrl: pendingItem.imageUrl || pendingItem.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
+          imageUrl: pendingItem.imageUrl || pendingItem.image || "",
           selectedCustomizations: pendingItem.selectedCustomizations || []
         };
 

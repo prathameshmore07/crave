@@ -192,6 +192,52 @@ Respond realistically to gating, bells, phone calls, location tracking, or drop-
   return apiResponse.replace(/[\*\_`#]/g, "").trim();
 }
 
+
+/**
+ * Specialized service to validate kitchen instructions.
+ * Rejects non-food items (cigarettes, illegal errands, etc.)
+ */
+export async function validateChefInstruction(instruction) {
+  if (!instruction || instruction.trim().length < 3) return { allowed: true };
+
+  const systemInstruction = `
+You are a food safety and kitchen policy validator for CRAVE, a premium food delivery platform.
+Analyze the user's cooking instruction provided below.
+
+Rules for "ALLOWED":
+- Instruction is related to food preparation (e.g., "extra spicy", "no onions", "fresh ingredients", "no artificial colors", "cook well").
+- Instruction is related to food packaging (e.g., "pack separately", "eco-friendly packaging").
+- Instruction is about allergies (e.g., "peanut allergy", "gluten-free").
+
+Rules for "REJECTED":
+- Instruction is for non-food items or errands (e.g., "buy cigarettes", "get a lighter", "pick up medicine", "bring alcohol").
+- Instruction is offensive, illegal, or completely unrelated to a restaurant kitchen.
+- Instruction is asking for free items that should be paid for (e.g., "add 2 extra burgers for free").
+
+Response Format:
+Respond with a JSON object exactly like this:
+{ "status": "ALLOWED" | "REJECTED", "reason": "Short explanation in 1 sentence if rejected, otherwise empty string" }
+`;
+
+  try {
+    const rawResponse = await callGemini(systemInstruction, `User Instruction: "${instruction}"`);
+    // Extract JSON from response (sometimes Gemini adds markdown code blocks)
+    const jsonMatch = rawResponse.match(/\{.*\}/s);
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { status: "ALLOWED", reason: "" };
+    
+    return {
+      allowed: parsed.status === "ALLOWED",
+      reason: parsed.reason || "This request is not related to food preparation."
+    };
+  } catch (error) {
+    if (!error.message.includes("API key")) {
+      console.error("Chef instruction validation failed:", error);
+    }
+    // Graceful fallback: allow if API fails or is missing to prevent blocking user
+    return { allowed: true }; 
+  }
+}
+
 /**
  * Persistent storage utilities for chat history per order.
  */

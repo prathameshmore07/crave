@@ -87,7 +87,7 @@ export const useReviewStore = create((set, get) => {
 
         const newReview = {
           id: reviewData.id || `custom-rev-${Date.now()}`,
-          userName: reviewData.userName || "You (Student)",
+          userName: reviewData.userName || "Student Verified",
           avatar: reviewData.avatar || "U",
           rating: ratingNum,
           foodQuality: Number(reviewData.foodQuality || ratingNum),

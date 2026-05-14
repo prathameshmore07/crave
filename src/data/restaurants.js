@@ -337,8 +337,8 @@ function createRestaurantMenu(cuisines, isVeg, isPureVeg, restaurantName) {
     if (menuItemImages[cleanName]) {
       resolvedImage = menuItemImages[cleanName];
     } else {
-      // Robust failsafe fallback
-      resolvedImage = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
+      // Allow DishImage component to resolve smart category-based fallbacks
+      resolvedImage = "";
     }
 
     return {
@@ -354,7 +354,7 @@ function createRestaurantMenu(cuisines, isVeg, isPureVeg, restaurantName) {
 }
 
 // 6 Cities and 5 localities/sub-cities per city
-const cityLocalities = {
+export const cityLocalities = {
   mumbai: ["Andheri", "Bandra", "Powai", "Dadar", "Colaba"],
   navimumbai: ["Panvel", "Kharghar", "Vashi", "Nerul", "Belapur"],
   pune: ["Hinjewadi", "Wakad", "Kothrud", "Baner", "Viman Nagar"],

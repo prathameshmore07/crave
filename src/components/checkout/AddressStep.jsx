@@ -4,8 +4,9 @@ import { useForm } from 'react-hook-form';
 import { MapPin, Plus, Trash2, Home, Briefcase, Check, PhoneOff, Bell, Shield, DoorOpen, Sparkles, Info, Package, BellRing, PhoneCall } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '../../store/cartStore';
+import { cityLocalities } from '../../data/restaurants';
 
-export default function AddressStep({ activeAddressId, onSelectAddress, onNext }) {
+export default function AddressStep({ activeAddressId, onSelectAddress, onNext, restaurantCities = [] }) {
   const user = useAuthStore((state) => state.user);
   const addAddress = useAuthStore((state) => state.addAddress);
   const deleteAddress = useAuthStore((state) => state.deleteAddress);
@@ -28,6 +29,19 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext }
   });
 
   const selectedType = watch("type");
+
+  const isCityMatch = (userCity, targetCity) => {
+    if (!userCity || !targetCity) return true;
+    const normalizedUser = userCity.toLowerCase().replace(/\s+/g, '');
+    const normalizedTarget = targetCity.toLowerCase().replace(/\s+/g, '');
+    
+    // Direct match
+    if (normalizedUser === normalizedTarget) return true;
+    
+    // Check if user entered a locality that belongs to the target city
+    const localities = cityLocalities[normalizedTarget] || [];
+    return localities.some(loc => loc.toLowerCase().replace(/\s+/g, '') === normalizedUser);
+  };
   const leaveAtDoor = watch("leaveAtDoor");
   const ringBell = watch("ringBell");
   const callOnArrival = watch("callOnArrival");
@@ -521,8 +535,21 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext }
                     isSelected 
                       ? 'border-brand bg-brand/[0.01] shadow-xs' 
                       : 'border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-dark-surface hover:border-gray-350 dark:hover:border-gray-700'
+                  } ${
+                    restaurantCities.length > 0 && 
+                    !restaurantCities.some(rc => isCityMatch(addr.city, rc)) 
+                      ? 'opacity-60 grayscale-[0.5] cursor-not-allowed' 
+                      : ''
                   }`}
                 >
+                  {restaurantCities.length > 0 && 
+                   !restaurantCities.some(rc => isCityMatch(addr.city, rc)) && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <span className="text-[8px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                        <MapPin size={8} /> Not Deliverable
+                      </span>
+                    </div>
+                  )}
                   <div className="space-y-1.5 flex-1 pr-4 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-black text-gray-850 dark:text-gray-200 flex items-center gap-1.5 leading-none">
@@ -557,6 +584,13 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext }
                     <p className="text-xs text-gray-600 dark:text-gray-400 font-medium leading-relaxed mt-2">
                       {addr.flat}, {addr.floor && `${addr.floor}, `}{addr.area}, {addr.landmark && `${addr.landmark}, `}{addr.city}, {addr.state} - {addr.pincode}
                     </p>
+
+                    {restaurantCities.length > 0 && 
+                     !restaurantCities.some(rc => isCityMatch(addr.city, rc)) && (
+                      <p className="text-[9px] text-red-500 font-bold mt-2 flex items-center gap-1">
+                        <Info size={10} /> Restaurant is in {restaurantCities.join(', ')}. Delivery not available to {addr.city}.
+                      </p>
+                    )}
 
                     {/* Restored Preferences Indicator Chips */}
                     {(addr.doorbellName || addr.leaveAtDoor || addr.ringBell === false || addr.callOnArrival || addr.instructions) && (
@@ -647,9 +681,13 @@ export default function AddressStep({ activeAddressId, onSelectAddress, onNext }
         <div className="flex justify-end pt-4 border-t border-black/[0.04] dark:border-white/[0.04]">
           <button
             onClick={onNext}
-            disabled={!activeAddressId}
+            disabled={
+              !activeAddressId || 
+              (restaurantCities.length > 0 && !restaurantCities.some(rc => isCityMatch(user?.addresses?.find(a => a.id === activeAddressId)?.city, rc)))
+            }
             className={`h-11 px-8 rounded-xl text-xs font-black uppercase tracking-widest shadow-sm transition-colors focus:outline-none ${
-              activeAddressId 
+              activeAddressId && 
+              (!restaurantCities.length || restaurantCities.some(rc => isCityMatch(user?.addresses?.find(a => a.id === activeAddressId)?.city, rc)))
                 ? 'bg-brand hover:bg-brand-hover text-white cursor-pointer' 
                 : 'bg-gray-100 dark:bg-neutral-800 text-gray-400 cursor-not-allowed'
             }`}

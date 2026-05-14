@@ -522,7 +522,7 @@ export default function Profile() {
                   orderId: rev.orderId,
                   restaurantId,
                   restaurantName: matchingOrder?.restaurantName || rev.restaurantName || "Campus Kitchen",
-                  restaurantImage: matchingOrder?.restaurantImageUrl || matchingOrder?.restaurantImage || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&auto=format&fit=crop&q=80",
+                  restaurantImage: matchingOrder?.restaurantImageUrl || matchingOrder?.restaurantImage || "",
                   rating: rev.rating,
                   foodQuality: rev.foodQuality || rev.rating,
                   deliveryExperience: rev.deliveryExperience || rev.rating,
@@ -565,6 +565,7 @@ export default function Profile() {
               submitReview(editingReview.restaurantId, {
                 id: editingReview.id,
                 orderId: editingReview.orderId,
+                userName: user?.name || "You (Student)",
                 rating: editStars,
                 foodQuality: editFoodStars,
                 deliveryExperience: editDeliveryStars,
@@ -643,6 +644,12 @@ export default function Profile() {
                         className="p-5 bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-900 rounded-2xl space-y-4 hover:shadow-xs transition-shadow flex flex-col justify-between"
                       >
                         <div className="space-y-4">
+                          {/* Order ID Tag at the very top for un-mixing */}
+                          <div className="flex items-center justify-between border-b border-black/[0.03] dark:border-white/[0.03] pb-2 mb-1">
+                            <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest">Feedback for Order #{review.orderId}</span>
+                            <span className="text-[10px] text-zinc-450 font-bold">{review.date}</span>
+                          </div>
+
                           {/* Card header */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -651,17 +658,16 @@ export default function Profile() {
                               </div>
                               <div className="text-left">
                                 <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 leading-none truncate max-w-[140px] md:max-w-[180px]">{review.restaurantName}</h4>
-                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                  <span className="text-[10px] text-zinc-450 font-medium">{review.date}</span>
+                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                   {review.isEdited && (
                                     <span className="text-[8px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">
                                       Edited
                                     </span>
                                   )}
+                                  <span className="text-xs scale-110">{review.emoji}</span>
                                 </div>
                               </div>
                             </div>
-                            <span className="text-sm scale-110">{review.emoji}</span>
                           </div>
 
                           {/* Star rating & sub-ratings */}

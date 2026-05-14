@@ -6,7 +6,7 @@ import { useUiStore } from '../../store/uiStore';
 import { useReviewStore } from '../../store/reviewStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatPrice } from '../../utils/formatPrice';
-import { ShoppingBag, ChevronRight, CheckCircle, Compass, Star, CreditCard, MessageSquare, X, ShieldAlert, Trash2, Download } from 'lucide-react';
+import { ShoppingBag, ChevronRight, CheckCircle, Compass, Star, CreditCard, MessageSquare, X, ShieldAlert, Trash2, Download, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -490,7 +490,7 @@ export default function OrderHistory() {
     // allow review only for delivered orders
     rateOrder(activeReviewOrder.orderId, ratingData);
 
-    const authorName = user ? user.name : "You (Student Verified)";
+    const authorName = user?.name || "Student Verified";
 
     // submit review instantly to the restaurant reviews pool
     submitReview(activeReviewOrder.restaurantId, {
@@ -590,193 +590,151 @@ export default function OrderHistory() {
           return (
             <div 
               key={order.orderId}
-              className="p-5 bg-zinc-50/50 dark:bg-zinc-900/10 border border-zinc-100 dark:border-zinc-900 rounded-2xl flex flex-col hover:shadow-xs hover:border-zinc-200 dark:hover:border-zinc-800 transition-all relative overflow-hidden"
+              className="p-5 md:p-6 bg-zinc-900/40 dark:bg-black/40 border border-zinc-100 dark:border-zinc-900 rounded-[24px] hover:bg-zinc-900/60 dark:hover:bg-zinc-900/30 transition-all group relative overflow-hidden"
             >
-              {/* Order content flex row */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-4">
-                <div className="flex gap-4 items-start min-w-0">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-neutral-800 border border-black/[0.05] flex-shrink-0">
-                    <DishImage 
-                      src={order.restaurantImageUrl || order.restaurantImage} 
-                      alt={order.restaurantName}
-                      dishName={order.restaurantName}
-                      className="w-full h-full object-cover"
-                    />
+              {/* Main horizontal layout - screenshot style */}
+              <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+                
+                {/* 1. Left: Restaurant Image */}
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/[0.05] flex-shrink-0 shadow-sm">
+                  <DishImage 
+                    src={order.restaurantImageUrl || order.restaurantImage} 
+                    alt={order.restaurantName}
+                    dishName={order.restaurantName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* 2. Middle-Left: Info Stack */}
+                <div className="flex-1 space-y-2.5 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(() => {
+                      const names = [...new Set(order.items.map(i => i.restaurantName || i.restaurant).filter(Boolean))];
+                      const displayName = names.length > 0 ? names.join(', ') : order.restaurantName;
+                      return (
+                        <h4 className="text-base font-black text-zinc-900 dark:text-zinc-50 leading-tight">
+                          {displayName}
+                        </h4>
+                      );
+                    })()}
+                    
+                    {isActive ? (
+                      <span className="text-[9px] bg-brand/10 text-brand font-black uppercase tracking-widest px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
+                        <Compass size={10} className="animate-spin" style={{ animationDuration: '3s' }} /> {status}
+                      </span>
+                    ) : isCancelled ? (
+                      <span className="text-[9px] bg-red-500/10 text-red-600 dark:text-red-400 font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">
+                        Cancelled
+                      </span>
+                    ) : (
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest px-2 py-0.5 rounded-lg flex items-center gap-0.5 border border-emerald-500/10">
+                        <CheckCircle size={10} /> Delivered
+                      </span>
+                    )}
+
+                    {hasRating && (
+                      <span className="text-[9px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-black uppercase tracking-widest px-2 py-0.5 rounded-lg flex items-center gap-0.5 border border-amber-500/10">
+                        <Star size={10} className="fill-amber-500 text-amber-500" /> Rated {order.rating.food}★
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-1 min-w-0 text-left">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-black text-gray-850 dark:text-gray-100">{order.restaurantName}</span>
-                      
-                      {isActive ? (
-                        <span className="text-[8px] bg-brand/10 text-brand font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
-                          <Compass size={9} className="animate-spin" style={{ animationDuration: '3s' }} /> {status}
-                        </span>
-                      ) : isCancelled ? (
-                        <span className="text-[8px] bg-red-500/10 text-red-600 dark:text-red-400 font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                          Cancelled
-                        </span>
-                      ) : (
-                        <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <CheckCircle size={9} /> Delivered
-                        </span>
-                      )}
+                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    {order.date} <span className="opacity-30">•</span> ID: <span className="text-zinc-500 dark:text-zinc-400 font-mono">CRV-{order.orderId}</span>
+                  </p>
 
-                      {hasRating && (
-                        <span className="text-[8px] bg-amber-500/10 text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <Star size={9} className="fill-amber-500 text-amber-500" /> Rated {order.rating.food}★
-                        </span>
-                      )}
-                    </div>
+                  <p className="text-[13px] text-zinc-600 dark:text-zinc-300 font-medium truncate max-w-lg leading-relaxed">
+                    {order.items.map(i => `${i.name} (${i.quantity}x)`).join(', ')}
+                  </p>
 
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
-                      {order.date} • ID: <span className="font-mono font-black">{order.orderId}</span>
-                    </p>
-                    
-                    {/* Items summary list */}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 pt-1 leading-normal font-medium truncate max-w-md">
-                      {order.items.map(i => `${i.name} (${i.quantity}x)`).join(', ')}
-                    </p>
-
-                    {/* Payment method info */}
-                    <span className="inline-flex items-center gap-1 text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider pt-1">
-                      <CreditCard size={10} /> Paid via {order.paymentMethod || "Secure UPI"}
+                  <div className="flex items-center gap-3 pt-0.5">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 dark:text-zinc-550 font-black uppercase tracking-widest">
+                      <CreditCard size={11} /> Paid via {order.paymentMethod || "COD"}
                     </span>
                   </div>
                 </div>
 
-                {/* Pricing breakdown & Action Column */}
-                <div className="flex flex-col items-start md:items-end gap-4 border-t md:border-t-0 border-black/[0.04] dark:border-white/[0.04] pt-4 md:pt-0">
-                  <div className="text-left md:text-right">
-                    <span className="text-[8px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest block">Paid Invoice</span>
-                    <span className="text-sm font-black text-brand tracking-tight">{formatPrice(order.totalAmount)}</span>
-                  </div>
-                  
-                  {/* Action Button Groups - Professional 2-Button spacious layout with text actions */}
-                  <div className="w-full md:w-auto flex-shrink-0 flex flex-col md:items-end gap-3.5">
-                    {/* ACTIVE ORDER ACTIONS */}
-                    {isActive && (
-                      <div className="flex flex-col w-full md:w-auto gap-2.5">
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                          <button
-                            onClick={() => navigate(`/order/${order.orderId}/track`)}
-                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1.5"
-                          >
-                            <Compass size={13} className="animate-spin" style={{ animationDuration: '4s' }} strokeWidth={2.5} />
-                            Track Order
-                          </button>
-                          <button
-                            onClick={() => toast.info("Connecting you to Support...", { description: `Order reference: ${order.orderId}` })}
-                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
-                          >
-                            Support
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
-                          <button
-                            onClick={() => toast.success("Calling delivery agent...", { description: "Rider ID: RD-9082" })}
-                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
-                          >
-                            🛵 Call Rider
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                {/* 3. Middle-Right: Quick Actions (Text based) */}
+                <div className="hidden lg:flex flex-col items-center justify-center gap-4 px-6 border-x border-zinc-100 dark:border-zinc-900">
+                  <button 
+                    onClick={() => navigate(`/order/${order.orderId}/track`)}
+                    className="text-[13px] font-black text-zinc-800 dark:text-zinc-100 hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer p-0"
+                  >
+                    View Details
+                  </button>
+                  <button 
+                    onClick={() => handlePrintReceipt(order)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-all bg-transparent border-none outline-none cursor-pointer p-0"
+                  >
+                    <Download size={12} /> Invoice PDF
+                  </button>
+                </div>
 
-                    {/* CANCELLED ORDER ACTIONS */}
-                    {isCancelled && (
-                      <div className="flex flex-col w-full md:w-auto gap-2.5">
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                          <button
-                            onClick={() => navigate(`/order/${order.orderId}/track`)}
-                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => handleReorder(order)}
-                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1"
-                          >
-                            Reorder
-                            <ChevronRight size={13} strokeWidth={2.5} />
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
-                          <button
-                            onClick={() => handlePrintReceipt(order)}
-                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
-                          >
-                            <Download size={11} /> Invoice PDF
-                          </button>
-                          <span className="text-gray-200 dark:text-gray-800">•</span>
-                          <button
-                            onClick={() => toast.info("Opening our resolution desk...", { description: `Order reference: ${order.orderId}` })}
-                            className="hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer"
-                          >
-                            Help Center
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* DELIVERED ORDER ACTIONS */}
-                    {isDelivered && (
-                      <div className="flex flex-col w-full md:w-auto gap-2.5">
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                          <button
-                            onClick={() => navigate(`/order/${order.orderId}/track`)}
-                            className="flex-1 md:flex-initial h-10 px-5 border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer border-none outline-none"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => handleReorder(order)}
-                            className="flex-1 md:flex-initial h-10 px-6 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-md shadow-brand/10 cursor-pointer border-none outline-none flex items-center justify-center gap-1"
-                          >
-                            Reorder
-                            <ChevronRight size={13} strokeWidth={2.5} />
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400 dark:text-gray-500 md:justify-end w-full pl-1">
-                          <button
-                            onClick={() => handlePrintReceipt(order)}
-                            className="hover:text-brand transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
-                          >
-                            <Download size={11} /> Invoice PDF
-                          </button>
-                          <span className="text-gray-200 dark:text-gray-800">•</span>
-                          {hasRating ? (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => openReviewModal(order)}
-                                className="hover:text-amber-500 transition-colors bg-transparent border-none outline-none cursor-pointer"
-                              >
-                                Edit Review
-                              </button>
-                              <span className="text-gray-200 dark:text-gray-800">|</span>
-                              <button
-                                onClick={() => triggerDeleteReview(order)}
-                                className="hover:text-red-500 transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-0.5"
-                                title="Delete Review"
-                              >
-                                <Trash2 size={11} /> Delete
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => openReviewModal(order)}
-                              className="hover:text-amber-500 transition-colors bg-transparent border-none outline-none cursor-pointer flex items-center gap-1"
-                            >
-                              <Star size={11} className="fill-amber-500/20 text-amber-500" /> Rate Order
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                {/* 4. Right: Price & Main Action */}
+                <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-center gap-4 w-full lg:w-auto">
+                  <div className="text-right flex flex-col items-end">
+                    <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-widest block mb-1">Paid Invoice</span>
+                    <span className="text-lg font-black text-brand tracking-tighter leading-none">₹{order.totalAmount}</span>
                   </div>
 
+                  <button
+                    onClick={() => handleReorder(order)}
+                    className="h-12 px-8 bg-brand hover:bg-brand-hover text-white text-[13px] font-black rounded-2xl transition-all hover:scale-[1.03] active:scale-97 shadow-lg shadow-brand/20 cursor-pointer border-none outline-none flex items-center justify-center gap-2 group/btn"
+                  >
+                    Reorder
+                    <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+
+              </div>
+
+              {/* Bottom Footer Actions (Mobile + Small Details) */}
+              <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-900 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex lg:hidden items-center gap-4">
+                  <button 
+                    onClick={() => navigate(`/order/${order.orderId}/track`)}
+                    className="text-[12px] font-black text-zinc-800 dark:text-zinc-100 bg-transparent border-none outline-none cursor-pointer p-0"
+                  >
+                    View Details
+                  </button>
+                  <button 
+                    onClick={() => handlePrintReceipt(order)}
+                    className="text-[11px] font-bold text-zinc-400 bg-transparent border-none outline-none cursor-pointer p-0"
+                  >
+                    Invoice PDF
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-4 ml-auto">
+                   {order.orderStatus === "Delivered" && (
+                     hasRating ? (
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => openReviewModal(order)}
+                          className="text-[11px] font-black text-zinc-400 hover:text-amber-500 transition-colors uppercase tracking-widest bg-transparent border-none outline-none cursor-pointer p-0"
+                        >
+                          Edit Review
+                        </button>
+                        <div className="w-[1px] h-3 bg-zinc-100 dark:bg-zinc-900" />
+                        <button
+                          onClick={() => triggerDeleteReview(order)}
+                          className="flex items-center gap-1.5 text-[11px] font-black text-zinc-400 hover:text-red-500 transition-colors uppercase tracking-widest bg-transparent border-none outline-none cursor-pointer p-0"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => openReviewModal(order)}
+                        className="flex items-center gap-1.5 text-[11px] font-black text-zinc-400 hover:text-amber-500 transition-colors uppercase tracking-widest bg-transparent border-none outline-none cursor-pointer p-0"
+                      >
+                        <Star size={12} /> Rate Order
+                      </button>
+                    )
+                   )}
                 </div>
               </div>
+
             </div>
           );
         })}
@@ -1115,7 +1073,7 @@ export default function OrderHistory() {
                           className="h-10 w-full bg-brand hover:bg-brand-hover text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:scale-[1.01] active:scale-99 shadow-md shadow-brand/10 flex items-center justify-center gap-1.5 border-none outline-none cursor-pointer pt-2"
                         >
                           <MessageSquare size={13} />
-                          Submit Taste Audit
+                          Submit Review
                         </button>
                       )}
                     </form>

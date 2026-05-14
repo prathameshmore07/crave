@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Heart, Flame, X, Sparkles, RotateCcw, Clock } from 'lucide-react';
+import { Heart, Flame, X, Sparkles, RotateCcw, Clock, MapPin, MapPinOff } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
+import { useCityStore } from '../store/cityStore';
+import { restaurants } from '../data/restaurants';
+import { cities } from '../data/cities';
 import { formatPrice } from '../utils/formatPrice';
 import { toast } from 'sonner';
 import DishImage from '../components/common/DishImage';
@@ -271,9 +274,110 @@ function SwipeCard({ item, onSwipeLeft, onSwipeRight, active }) {
 
 export default function FoodExplorer() {
   const addItem = useCartStore((state) => state.addItem);
+  const selectedCity = useCityStore((state) => state.selectedCity);
+  const selectedLocality = useCityStore((state) => state.selectedLocality);
 
-  const [deck, setDeck] = useState(EXPLORER_DECK);
+  // Get human-readable city name
+  const cityName = useMemo(() => {
+    return cities.find(c => c.id === selectedCity)?.name || selectedCity;
+  }, [selectedCity]);
+
+  // Track rejected and saved items to prevent repeats
+  const [rejectedIds, setRejectedIds] = useState(() => getUserJsonItem('explorer_rejected_ids', []));
+  const [rejectedNames, setRejectedNames] = useState(() => getUserJsonItem('explorer_rejected_names', []));
+  
+  const [savedData, setSavedData] = useState(() => {
+    const saved = getUserJsonItem('saved_for_later', []);
+    return {
+      ids: saved.map(s => s.id),
+      names: saved.map(s => s.name)
+    };
+  });
+
+  // Keep savedData in sync with wishlist events
+  useEffect(() => {
+    const syncSaved = () => {
+      const saved = getUserJsonItem('saved_for_later', []);
+      setSavedData({
+        ids: saved.map(s => s.id),
+        names: saved.map(s => s.name)
+      });
+    };
+    window.addEventListener('wishlist-updated', syncSaved);
+    return () => window.removeEventListener('wishlist-updated', syncSaved);
+  }, []);
+
+  // Sync rejected items to localStorage
+  useEffect(() => {
+    setUserItem('explorer_rejected_ids', rejectedIds);
+    setUserItem('explorer_rejected_names', rejectedNames);
+  }, [rejectedIds, rejectedNames]);
+
+  // Dynamically generate deck based on selected location
+  const deck = useMemo(() => {
+    if (!selectedCity || !selectedLocality) return EXPLORER_DECK;
+
+    // Filter restaurants matching selected city and locality
+    const localRestaurants = restaurants.filter(
+      r => r.city === selectedCity && r.locality === selectedLocality
+    );
+
+    if (localRestaurants.length === 0) return EXPLORER_DECK;
+
+    // Filter and transform
+    const localDishes = [];
+    const seenNamesInSession = new Set();
+
+    localRestaurants.forEach(res => {
+      res.menuCategories.forEach(cat => {
+        cat.items.forEach(item => {
+          // Rule 1: Price must be >= 60
+          // Rule 2: Item (ID or Name) must not be in rejected history
+          // Rule 3: Item (ID or Name) must not be in saved history (wishlist)
+          // Rule 4: Name must be unique within this specific generated deck
+          
+          const isRejected = rejectedIds.includes(item.id) || rejectedNames.includes(item.name);
+          const isSaved = savedData.ids.includes(item.id) || savedData.names.includes(item.name);
+          const isDuplicateInDeck = seenNamesInSession.has(item.name);
+
+          if (item.price >= 60 && !isRejected && !isSaved && !isDuplicateInDeck) {
+            seenNamesInSession.add(item.name);
+            localDishes.push({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              rating: item.rating || res.rating,
+              restaurant: res.name,
+              restaurantId: res.id,
+              deliveryTime: `${res.deliveryTime} mins`,
+              spiceLevel: item.spiceLevel !== undefined ? item.spiceLevel : (Math.floor(Math.random() * 3) + 1),
+              popularityTag: item.isBestseller ? "Bestseller" : (item.isMostOrdered ? "Most Ordered" : "Trending"),
+              funDescription: item.description || "A delicious must-try dish from our kitchen.",
+              imageUrl: item.imageUrl,
+              isVeg: item.isVeg,
+              calories: item.calories || (250 + Math.floor(Math.random() * 400)),
+              protein: item.protein || `${8 + Math.floor(Math.random() * 20)}g`,
+              carbs: item.carbs || `${30 + Math.floor(Math.random() * 50)}g`,
+              restaurantCity: res.city
+            });
+          }
+        });
+      });
+    });
+
+    // Shuffle the local dishes and take a healthy subset
+    return localDishes
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 40);
+  }, [selectedCity, selectedLocality, rejectedIds, rejectedNames, savedData]);
+
   const [index, setIndex] = useState(0);
+
+  // Reset index when location/deck changes
+  useEffect(() => {
+    setIndex(0);
+  }, [deck]);
+
   const [bursts, setBursts] = useState([]);
 
   const currentItem = deck[index];
@@ -295,6 +399,10 @@ export default function FoodExplorer() {
   };
 
   const handleSwipeLeft = (item) => {
+    // Add to rejected history persistently (ID and Name)
+    setRejectedIds(prev => [...new Set([...prev, item.id])]);
+    setRejectedNames(prev => [...new Set([...prev, item.name])]);
+    
     setIndex(prev => prev + 1);
     triggerBurst("skip");
     toast.info(`Skipped ${item.name}`, { position: 'top-center', duration: 1000 });
@@ -331,7 +439,8 @@ export default function FoodExplorer() {
       id: item.restaurantId,
       name: item.restaurant,
       locality: "Campus Kitchens",
-      imageUrl: item.imageUrl
+      imageUrl: item.imageUrl,
+      city: item.restaurantCity
     };
 
     addItem({
@@ -351,7 +460,11 @@ export default function FoodExplorer() {
   };
 
   const handleReset = () => {
+    // Clear rejected history to allow a fresh start
+    setRejectedIds([]);
+    setRejectedNames([]);
     setIndex(0);
+    toast.success("Deck reset! All dishes are available again.", { position: 'bottom-center' });
   };
 
   return (

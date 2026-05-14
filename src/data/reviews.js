@@ -43,7 +43,7 @@ const itmCanteenReviews = [
   {
     id: "navimumbai-kharghar-1-rev-2",
     userName: "Om",
-    avatar: "D",
+    avatar: "O",
     rating: 4,
     date: "3 days ago",
     text: "NMIMS Canteen Review ❌ ITM Canteen Review ✅",

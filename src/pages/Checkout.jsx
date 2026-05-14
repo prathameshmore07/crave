@@ -12,6 +12,7 @@ import { ShoppingBag, ArrowLeft, ShieldCheck, MapPin, CreditCard } from 'lucide-
 import { toast } from 'sonner';
 import { riders } from '../data/riders';
 import useMembershipStore from '../store/membershipStore';
+import { restaurants } from '../data/restaurants';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -91,12 +92,14 @@ export default function Checkout() {
       locality: "Kharghar"
     };
 
+    const uniqueRestaurants = [...new Set(cartItems.map(item => item.restaurantName).filter(Boolean))];
+    const isMultiOrder = uniqueRestaurants.length > 1;
+
     const newOrder = {
-      orderId,
-      restaurantId: activeRest.id,
-      restaurantName: activeRest.name,
-      restaurantImageUrl: activeRest.imageUrl,
-      locality: activeRest.locality,
+      orderId: `CRV-${Math.floor(Math.random() * 900000) + 100000}`,
+      restaurantName: isMultiOrder ? uniqueRestaurants.join(', ') : (activeRest?.name || uniqueRestaurants[0]),
+      restaurantImageUrl: isMultiOrder ? cartItems[0].restaurantImageUrl : (activeRest?.imageUrl || cartItems[0].restaurantImageUrl),
+      locality: isMultiOrder ? "Multiple Kitchens" : (activeRest?.locality || "Campus"),
       date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       items: cartItems.map(item => ({
         id: item.id,
@@ -104,7 +107,12 @@ export default function Checkout() {
         price: item.price,
         quantity: item.quantity,
         selectedCustomizations: item.selectedCustomizations,
-        isVeg: item.isVeg
+        isVeg: item.isVeg,
+        imageUrl: item.imageUrl,
+        restaurantId: item.restaurantId,
+        restaurantName: item.restaurantName,
+        restaurantImageUrl: item.restaurantImageUrl,
+        locality: item.locality
       })),
       deliveryAddress: matchedAddress,
       paymentMethod: paymentData.method,
@@ -202,6 +210,12 @@ export default function Checkout() {
               activeAddressId={selectedAddressId}
               onSelectAddress={setSelectedAddressId}
               onNext={handleAddressConfirmed}
+              restaurantCities={[...new Set(cartItems.map(item => {
+                // If item has city, use it; otherwise look it up from restaurants data
+                if (item.restaurantCity) return item.restaurantCity;
+                const foundRest = restaurants.find(r => r.id === item.restaurantId);
+                return foundRest ? foundRest.city : null;
+              }).filter(Boolean))]}
             />
           )}
 
@@ -223,11 +237,15 @@ export default function Checkout() {
                   <ShoppingBag size={16} className="text-brand" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 dark:text-gray-200">Basket Summary</h3>
                 </div>
-                {activeRestaurant && (
-                  <span className="text-[10px] font-bold text-brand bg-brand/10 px-2 py-0.5 rounded">
-                    {activeRestaurant.name}
-                  </span>
-                )}
+                {(() => {
+                  const uniqueRestaurants = [...new Set(cartItems.map(item => item.restaurantName).filter(Boolean))];
+                  const isMulti = uniqueRestaurants.length > 1;
+                  return (
+                    <span className="text-[10px] font-bold text-brand bg-brand/10 px-2.5 py-1 rounded-lg leading-tight text-right">
+                      {isMulti ? `Multiple Kitchens (${uniqueRestaurants.length}): ${uniqueRestaurants.join(", ")}` : (activeRestaurant?.name || uniqueRestaurants[0])}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Items Summary Details list */}

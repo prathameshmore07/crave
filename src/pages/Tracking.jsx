@@ -707,7 +707,10 @@ export default function Tracking() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-black uppercase tracking-widest text-brand leading-none">
-                      {orderToShow.restaurantName || "CRAVE Partner"}
+                      {(() => {
+                        const names = [...new Set(orderToShow.items.map(i => i.restaurantName || i.restaurant).filter(Boolean))];
+                        return names.length > 0 ? names.join(', ') : (orderToShow.restaurantName || "CRAVE Partner");
+                      })()}
                     </span>
                     <span className="text-gray-300 dark:text-neutral-800 text-[10px]">•</span>
                     <span className="text-[9px] font-mono text-gray-400 dark:text-gray-500 font-extrabold leading-none">

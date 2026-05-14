@@ -36,6 +36,53 @@ export default function SupportDrawer() {
   const [callbackPhone, setCallbackPhone] = useState("");
   const [callbackSubmitted, setCallbackSubmitted] = useState(false);
   const [callbackTimer, setCallbackTimer] = useState(0);
+  const [errors, setErrors] = useState({ name: "", phone: "" });
+
+  const validateForm = () => {
+    let nameError = "";
+    let phoneError = "";
+
+    // Name Validation
+    const cleanName = callbackName.trim();
+    if (!cleanName) {
+      nameError = "Full name is required";
+    } else if (cleanName.length < 2) {
+      nameError = "Name must be at least 2 characters";
+    } else if (!/^[a-zA-Z\s]+$/.test(cleanName)) {
+      nameError = "Letters and spaces only";
+    }
+
+    // Phone Validation
+    const cleanPhone = callbackPhone.replace(/[\s()-]/g, ""); // strip spaces/formatting
+    if (!cleanPhone) {
+      phoneError = "Phone number is required";
+    } else {
+      const isIndianWithPlus = /^\+91[6-9]\d{9}$/.test(cleanPhone);
+      const isIndianNoPlus = /^91[6-9]\d{9}$/.test(cleanPhone);
+      const isIndianLocal = /^[6-9]\d{9}$/.test(cleanPhone);
+      
+      if (!isIndianWithPlus && !isIndianNoPlus && !isIndianLocal) {
+        phoneError = "Use valid 10-digit format (e.g. 9876543210)";
+      }
+    }
+
+    setErrors({ name: nameError, phone: phoneError });
+    return !nameError && !phoneError;
+  };
+
+  const handleNameChange = (val) => {
+    setCallbackName(val);
+    if (errors.name) {
+      setErrors(prev => ({ ...prev, name: "" }));
+    }
+  };
+
+  const handlePhoneChange = (val) => {
+    setCallbackPhone(val);
+    if (errors.phone) {
+      setErrors(prev => ({ ...prev, phone: "" }));
+    }
+  };
 
   const chatEndRef = useRef(null);
 
@@ -147,8 +194,8 @@ export default function SupportDrawer() {
 
   const handleCallbackSubmit = (e) => {
     e.preventDefault();
-    if (!callbackName.trim() || !callbackPhone.trim()) {
-      toast.error("Please enter your name and phone number.");
+    if (!validateForm()) {
+      toast.error("Please resolve the validation errors.");
       return;
     }
 
@@ -346,26 +393,44 @@ export default function SupportDrawer() {
 
                   <form onSubmit={handleCallbackSubmit} className="space-y-4">
                     <div className="space-y-1 text-left">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-stone-400">Your Full Name</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400">Your Full Name</label>
+                        {errors.name && (
+                          <span className="text-[9px] text-red-500 font-extrabold tracking-wide uppercase animate-pulse">{errors.name}</span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         required
                         value={callbackName}
-                        onChange={(e) => setCallbackName(e.target.value)}
+                        onChange={(e) => handleNameChange(e.target.value)}
                         placeholder="e.g. Rahul Sharma"
-                        className="h-10 w-full px-3 text-xs font-semibold bg-stone-50 dark:bg-neutral-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl outline-none focus:bg-white"
+                        className={`h-10 w-full px-3 text-xs font-semibold bg-stone-50 dark:bg-neutral-900 border rounded-xl outline-none transition-all ${
+                          errors.name 
+                            ? 'border-red-500/60 focus:border-red-500 focus:bg-red-500/[0.02]' 
+                            : 'border-black/[0.06] dark:border-white/[0.06] focus:bg-white focus:border-brand/40'
+                        }`}
                       />
                     </div>
 
                     <div className="space-y-1 text-left">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-stone-400">Delivery Mobile Number</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-stone-400">Delivery Mobile Number</label>
+                        {errors.phone && (
+                          <span className="text-[9px] text-red-500 font-extrabold tracking-wide uppercase animate-pulse">{errors.phone}</span>
+                        )}
+                      </div>
                       <input
                         type="tel"
                         required
                         value={callbackPhone}
-                        onChange={(e) => setCallbackPhone(e.target.value)}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
                         placeholder="e.g. +91 98765 43210"
-                        className="h-10 w-full px-3 text-xs font-semibold bg-stone-50 dark:bg-neutral-900 border border-black/[0.06] dark:border-white/[0.06] rounded-xl outline-none focus:bg-white"
+                        className={`h-10 w-full px-3 text-xs font-semibold bg-stone-50 dark:bg-neutral-900 border rounded-xl outline-none transition-all ${
+                          errors.phone 
+                            ? 'border-red-500/60 focus:border-red-500 focus:bg-red-500/[0.02]' 
+                            : 'border-black/[0.06] dark:border-white/[0.06] focus:bg-white focus:border-brand/40'
+                        }`}
                       />
                     </div>
 

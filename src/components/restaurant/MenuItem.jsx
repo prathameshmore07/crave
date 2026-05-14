@@ -26,7 +26,8 @@ export default function MenuItem({ item, restaurant, onOpenCustomize }) {
         id: restaurant.id,
         name: restaurant.name,
         locality: restaurant.locality,
-        imageUrl: restaurant.imageUrl
+        imageUrl: restaurant.imageUrl,
+        city: restaurant.city
       };
       addItem(item, restInfo);
       toast.success(`${item.name} added to cart!`, {
@@ -55,7 +56,8 @@ export default function MenuItem({ item, restaurant, onOpenCustomize }) {
         id: restaurant.id,
         name: restaurant.name,
         locality: restaurant.locality,
-        imageUrl: restaurant.imageUrl
+        imageUrl: restaurant.imageUrl,
+        city: restaurant.city
       };
       addItem(item, restInfo);
       toast.success(`${item.name} added to cart!`, {

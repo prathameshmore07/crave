@@ -24,6 +24,7 @@ export default function SearchOverlay() {
   const searchOpen = useUiStore((state) => state.searchOpen);
   const setSearchOpen = useUiStore((state) => state.setSearchOpen);
   const selectedCity = useCityStore((state) => state.selectedCity);
+  const selectedLocality = useCityStore((state) => state.selectedLocality);
 
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
@@ -81,7 +82,8 @@ export default function SearchOverlay() {
 
     const lowerQuery = debouncedQuery.toLowerCase();
     const cityRestaurants = restaurants.filter(
-      (r) => r.city.toLowerCase() === selectedCity.toLowerCase()
+      (r) => r.city.toLowerCase() === selectedCity.toLowerCase() &&
+             r.locality.toLowerCase() === selectedLocality.toLowerCase()
     );
 
     // 1. Restaurant matches
